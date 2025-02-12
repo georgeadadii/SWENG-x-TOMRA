@@ -1,6 +1,6 @@
-Make sure to run `pip install -r requirements.txt` to install the required Python packages
+## Make sure to run `pip install -r requirements.txt` to install the required Python packages
 
-You must also set up Neo4j:
+## You must also set up Neo4j:
 
     Install Neo4j Desktop and create a new project.
 
@@ -10,7 +10,7 @@ You must also set up Neo4j:
 
     Create a database and note the connection details (URI, username, password).
 
-To start the gRPC servers:
+## To start the gRPC servers:
 
     Run `python model_service.py`
     
@@ -20,7 +20,7 @@ To start the gRPC servers:
 
     Some images for the model_service are already provided in \unprocessed_images\
 
-To view the database:
+## To view the database:
 
     Go to http://localhost:7474/browser/
 
@@ -30,7 +30,7 @@ To view the database:
 
         Run the query "MATCH (i:[NODE]) RETURN i", where [NODE] is the name of the new label
 
-Changing gRPC contracts:
+## Changing gRPC contracts:
 
     gRPC contracts are in \protos\
 

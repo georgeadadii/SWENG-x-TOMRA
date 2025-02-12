@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+service ModelService {
+  rpc StoreResults (ResultsRequest) returns (ResultsResponse);
+}
+
+message ResultsRequest {
+  bytes image_data = 1; 
+  repeated string class_labels = 2; 
+  repeated float confidences = 3; 
+}
+
+message ResultsResponse {
+  bool success = 1;
+  string message = 2;
+}

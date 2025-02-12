@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+service Neo4jService {
+  rpc StoreResult (ClassificationResult) returns (StoreResultResponse);
+  rpc GetFeedback (FeedbackRequest) returns (FeedbackResponse);
+}
+
+message ClassificationResult {
+  string class_label = 1;
+  float confidence = 2;
+}
+
+message StoreResultResponse {
+  bool success = 1;
+}
+
+message FeedbackRequest {
+  string result_id = 1;
+}
+
+message FeedbackResponse {
+  string feedback = 1;
+}

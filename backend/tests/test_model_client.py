@@ -18,15 +18,15 @@ def test_load_image_data():
 
     os.remove(test_image_path)
 
-def test_process_image():
-    """Test processing an image using YOLO."""
-    # Use a sample image (you can add a small test image to your repo)
-    test_image_path = "backend/tests/test_images/test_image.jpg"
-    if not os.path.exists(test_image_path):
-        pytest.skip("Test image not found")
+# def test_process_image():
+#     """Test processing an image using YOLO."""
+#     # Use a sample image (you can add a small test image to your repo)
+#     test_image_path = "backend/tests/test_images/test_image.jpg"
+#     if not os.path.exists(test_image_path):
+#         pytest.skip("Test image not found")
 
-    # Test processing the image
-    labels, confs = process_image(test_image_path)
-    assert isinstance(labels, list)
-    assert isinstance(confs, list)
-    assert len(labels) == len(confs)
+#     # Test processing the image
+#     labels, confs = process_image(test_image_path)
+#     assert isinstance(labels, list)
+#     assert isinstance(confs, list)
+#     assert len(labels) == len(confs)

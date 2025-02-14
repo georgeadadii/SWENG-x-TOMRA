@@ -14,13 +14,15 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         print("Received StoreResult request:")
         print("Class Label:", request.class_label)
         print("Confidence:", request.confidence)
+        print("URL:", request.image_url)
 
         # Store the result in Neo4j
         with self.driver.session() as session:
             session.run(
-                "CREATE (r:Result {class_label: $class_label, confidence: $confidence})",
+                "CREATE (r:Result {class_label: $class_label, confidence: $confidence, image_url: $image_url})",
                 class_label=request.class_label,
-                confidence=request.confidence
+                confidence=request.confidence,
+                image_url=request.image_url
             )
 
         return neo4j_service_pb2.StoreResultResponse(success=True)

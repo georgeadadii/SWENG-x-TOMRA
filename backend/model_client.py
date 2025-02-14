@@ -3,11 +3,28 @@ import model_service_pb2
 import model_service_pb2_grpc
 import os
 from ultralytics import YOLO
+from azure.storage.blob import BlobServiceClient
 
-def load_image_data(image_path):
-    """Load image data from a file as bytes."""
-    with open(image_path, "rb") as f:
-        return f.read()
+# def load_image_data(image_path):
+#     """Load image data from a file as bytes."""
+#     with open(image_path, "rb") as f:
+#         return f.read()
+
+AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
+CONTAINER_NAME = "sweng25group06cont"
+
+def upload_to_azure(image_path):
+    blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+    blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=os.path.basename(image_path))
+
+    with open(image_path, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
+
+    """Creates the Blob URL"""
+    image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{os.path.basename(image_path)}"
+    print(image_url)
+
+    return image_url  
 
 def process_image(image_path):
     """Process an image using YOLO and return class labels and confidences."""
@@ -22,12 +39,12 @@ def process_image(image_path):
 
     return labels, confs
 
-def send_results_to_server(image_data, labels, confs):
+def send_results_to_server(image_url, labels, confs):
     """Send image data and results to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
         request = model_service_pb2.ResultsRequest(
-            image_data=image_data,
+            image_url=image_url,
             class_labels=labels,
             confidences=confs
         )
@@ -50,13 +67,13 @@ def run():
             image_path = os.path.join(unprocessed_folder_path, image_name)
             print(f"Processing image: {image_name}")
 
-            image_data = load_image_data(image_path)
+            image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
             labels, confs = process_image(image_path)
 
             # Send the image and results to the server
-            send_results_to_server(image_data, labels, confs)
+            send_results_to_server(image_url, labels, confs)
 
     except Exception as e:
         print(f"Client error: {e}")

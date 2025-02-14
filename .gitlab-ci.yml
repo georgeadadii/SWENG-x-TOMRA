@@ -13,6 +13,10 @@ cache:
     - venv/
 
 before_script:
+  - apt-get -qq update && apt-get -qq install -y python
+  - apt-get -qq update
+  - apt-get -qq install -y python python-virtualenv python-pip
+  - python --version
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate

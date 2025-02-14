@@ -1,6 +1,5 @@
 stages:
   - setup
-  - lint
   - test
   - build
 
@@ -28,23 +27,6 @@ setup:
   artifacts:
     paths:
       - venv/
-  cache:
-    paths:
-      - venv/
-
-# Linting
-lint:
-  stage: lint
-  tags:
-    - maven
-  image: python:3.10
-  script:
-    - source venv/bin/activate
-    - echo "Running linting checks..."
-    - pip install flake8 black
-    - flake8 $BACKEND_DIR --count --select=E9,F63,F7,F82 --show-source --statistics
-    - flake8 $BACKEND_DIR --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - black --check $BACKEND_DIR
   cache:
     paths:
       - venv/

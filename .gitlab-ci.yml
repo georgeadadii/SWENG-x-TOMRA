@@ -1,4 +1,5 @@
 stages:
+  - setup
   - lint
   - test
   - build
@@ -12,40 +13,56 @@ cache:
     - .cache/pip
     - venv/
 
-before_script:
-  - apt-get -qq update && apt-get -qq install -y python
-  - apt-get -qq update
-  - apt-get -qq install -y python python-virtualenv python-pip
-  - python --version
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-  - pip install -r $BACKEND_DIR/requirements.txt  
+# Setup
+setup:
+  stage: setup
+  image: python:3.10
+  script:
+    - python --version
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install -r $BACKEND_DIR/requirements.txt
+  artifacts:
+    paths:
+      - venv/
+  cache:
+    paths:
+      - venv/
 
 # Linting
 lint:
   stage: lint
   image: python:3.10
   script:
+    - source venv/bin/activate
     - echo "Running linting checks..."
     - pip install flake8 black
     - flake8 $BACKEND_DIR --count --select=E9,F63,F7,F82 --show-source --statistics
     - flake8 $BACKEND_DIR --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - black --check $BACKEND_DIR
+  cache:
+    paths:
+      - venv/
 
 # Testing
 test:
   stage: test
   image: python:3.10
   script:
+    - source venv/bin/activate
     - echo "Running tests..."
     - python -m pytest $BACKEND_DIR/tests/ 
+  cache:
+    paths:
+      - venv/
 
 # Building
 build:
   stage: build
   image: python:3.10
   script:
+    - source venv/bin/activate
     - echo "Building the project..."
     - python $BACKEND_DIR/model_client.py  
     - python $BACKEND_DIR/model_service.py &  
@@ -53,3 +70,6 @@ build:
     - python $BACKEND_DIR/neo4j_service.py &  
     - sleep 5  
     - echo "Build completed successfully."
+  cache:
+    paths:
+      - venv/

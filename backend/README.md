@@ -8,7 +8,7 @@
 
     The name of the database does not matter but make sure the password is set to "password"
 
-    Create a database and note the connection details (URI, username, password).
+    Start the database and make sure it's running
 
 ## To start the gRPC servers:
 
@@ -23,6 +23,10 @@
 ## To view the database:
 
     Go to http://localhost:7474/browser/
+
+    Log in with the following details:
+        User: neo4j
+        Password: password
 
     Run the query "MATCH (r:Result) RETURN r" to see all classification result nodes
 

@@ -22,7 +22,7 @@ def test_store_results(model_service):
 
     # Create a mock request
     request = ResultsRequest(
-        image_data=b"fake image data",
+        image_url="http://example.com/image.jpg",
         class_labels=["label1", "label2"],
         confidences=[0.9, 0.8]
     )

@@ -1,5 +1,3 @@
-image: python
-
 stages:
   - lint
   - test
@@ -24,6 +22,7 @@ before_script:
 # Linting
 lint:
   stage: lint
+  image: python:3.10
   script:
     - echo "Running linting checks..."
     - pip install flake8 black
@@ -34,6 +33,7 @@ lint:
 # Testing
 test:
   stage: test
+  image: python:3.10
   script:
     - echo "Running tests..."
     - python -m pytest $BACKEND_DIR/tests/ 
@@ -41,6 +41,7 @@ test:
 # Building
 build:
   stage: build
+  image: python:3.10
   script:
     - echo "Building the project..."
     - python $BACKEND_DIR/model_client.py  

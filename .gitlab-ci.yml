@@ -54,7 +54,6 @@ build:
   script:
     - source venv/bin/activate
     - echo "Building the project..."
-    - python $BACKEND_DIR/model_client.py  
     - python $BACKEND_DIR/model_service.py &  
     - sleep 5  
     - python $BACKEND_DIR/neo4j_service.py &  

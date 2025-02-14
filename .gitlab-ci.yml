@@ -16,6 +16,8 @@ cache:
 # Setup
 setup:
   stage: setup
+  tags:
+    - maven
   image: python:3.10
   script:
     - python --version

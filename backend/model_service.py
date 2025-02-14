@@ -6,6 +6,7 @@ import neo4j_service_pb2
 import neo4j_service_pb2_grpc
 import logging
 import os
+import requests
 
 class ModelService(model_service_pb2_grpc.ModelServiceServicer):
     def __init__(self):
@@ -19,15 +20,25 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
             for label, confidence in zip(request.class_labels, request.confidences):
                 print(f"Class: {label}, Confidence: {confidence}")
 
-            image_path = "received_image.jpg"
-            with open(image_path, "wb") as f:
-                f.write(request.image_data)
-            print(f"Image saved to {image_path}")
+            # Download the image from the URL (string)
+            image_url = request.image_url  # The URL is already a string
+            response = requests.get(image_url)  # Send a GET request to the image URL
+
+            # Ensure the request was successful
+            if response.status_code == 200:
+                # Save the image to disk
+                image_path = "received_image.jpg"
+                with open(image_path, "wb") as f:
+                    f.write(response.content)  # Write the raw image data to the file
+                print(f"Image saved to {image_path}")
+            else:
+                raise Exception(f"Failed to download image, status code: {response.status_code}")
 
             for label, confidence in zip(request.class_labels, request.confidences):
                 neo4j_request = neo4j_service_pb2.ClassificationResult(
                 class_label=label,
-                confidence=confidence
+                confidence=confidence,
+                image_url=image_url
                 )
                 neo4j_response = self.neo4j_stub.StoreResult(neo4j_request)
                 print("Neo4j StoreResult response:", neo4j_response.success)

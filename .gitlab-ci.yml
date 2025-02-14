@@ -1,0 +1,64 @@
+stages:
+  - setup
+  - test
+  - build
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  BACKEND_DIR: "backend" 
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+# Setup
+setup:
+  stage: setup
+  tags:
+    - maven
+  image: python:3.10
+  script:
+    - python --version
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install -r <(grep -v "ultralytics" $BACKEND_DIR/requirements.txt)
+  artifacts:
+    paths:
+      - venv/
+  cache:
+    paths:
+      - venv/
+
+# Testing
+test:
+  stage: test
+  tags:
+    - maven
+  image: python:3.10
+  script:
+    - source venv/bin/activate
+    - echo "Running tests..."
+    - python -m pytest $BACKEND_DIR/tests/ 
+  cache:
+    paths:
+      - venv/
+
+# Building
+build:
+  stage: build
+  tags:
+    - maven
+  image: python:3.10
+  script:
+    - source venv/bin/activate
+    - echo "Building the project..."
+    - python $BACKEND_DIR/model_service.py &  
+    - sleep 5  
+    - python $BACKEND_DIR/neo4j_service.py &  
+    - sleep 5  
+    - echo "Build completed successfully."
+  cache:
+    paths:
+      - venv/

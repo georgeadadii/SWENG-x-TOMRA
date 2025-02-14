@@ -1,4 +1,5 @@
 node_modules/
 *.pt
 __pycache__/
+backend/venv
 received_image.*

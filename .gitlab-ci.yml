@@ -35,6 +35,8 @@ setup:
 # Linting
 lint:
   stage: lint
+  tags:
+    - maven
   image: python:3.10
   script:
     - source venv/bin/activate
@@ -50,6 +52,8 @@ lint:
 # Testing
 test:
   stage: test
+  tags:
+    - maven
   image: python:3.10
   script:
     - source venv/bin/activate
@@ -62,6 +66,8 @@ test:
 # Building
 build:
   stage: build
+  tags:
+    - maven
   image: python:3.10
   script:
     - source venv/bin/activate

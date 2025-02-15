@@ -5,34 +5,38 @@ from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
 
-# Define a GraphQL type that matches Neo4j data
+# Define a GraphQL type that matches Neo4j data with additional image_url field
 @strawberry.type
 class ResultType:
-    class_label: str = strawberry.field(name="classLabel")  # Fix naming issue
+    class_label: str = strawberry.field(name="classLabel")
     confidence: float
+    image_url: str = strawberry.field(name="imageUrl")
 
-NEO4J_URI = "bolt://localhost:7687"  
+NEO4J_URI = "bolt://localhost:7687"
 NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "password"  
+NEO4J_PASSWORD = "password"
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 def get_results() -> List[ResultType]:
     """
     Queries the Neo4j database for all nodes with label 'Result'
-    and returns a list of results.
+    and returns a list of results including image_url.
     """
     with driver.session() as session:
         result = session.run(
             """
             MATCH (n:Result)
-            RETURN n.class_label AS class_label, n.confidence AS confidence
+            RETURN n.class_label AS class_label, 
+                   n.confidence AS confidence,
+                   n.image_url AS image_url
             """
         )
         return [
             ResultType(
                 class_label=record["class_label"],
-                confidence=record["confidence"]
+                confidence=record["confidence"],
+                image_url=record["image_url"]
             ) 
             for record in result
         ]

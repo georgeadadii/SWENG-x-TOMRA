@@ -1,12 +1,11 @@
 "use client";
 
-import Sidebar from "@/components/Sidebar";
 import ImageGrid from "@/components/ImageGrid";
 
 const DashboardPage: React.FC = () => {
     return (
-        <div className="flex h-screen w-screen bg-gray-100 font-mona">
-            <Sidebar />
+        <div>
+            <h1 className="text-4xl font-bold mb-8">Gallery</h1>
             <ImageGrid />
         </div>
     );

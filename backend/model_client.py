@@ -2,7 +2,16 @@ import grpc
 import model_service_pb2
 import model_service_pb2_grpc
 import os
-from ultralytics import YOLO
+
+if os.getenv("CI") != "true":
+    from ultralytics import YOLO
+else:
+    class YOLO:
+        def __init__(self, *args, **kwargs):
+            pass
+        def predict(self, *args, **kwargs):
+            return "Mocked prediction for CI"
+
 from azure.storage.blob import BlobServiceClient
 
 # def load_image_data(image_path):

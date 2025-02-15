@@ -6,10 +6,11 @@ import ImageSwiper from "@/components/ImageSwiper";
 const SwipingPage: React.FC = () => {
     return (
         <div className="flex h-screen w-screen bg-gray-100 font-mona">
-            <div className="w-64">
-                <Sidebar />
-            </div>
-            <div className="flex-1 flex items-start justify-center p-4 mt-0">
+            {/* Sidebar only appears once */}
+            <Sidebar />
+            
+            {/* ImageSwiper takes up the rest of the space */}
+            <div className="flex flex-1 items-center justify-center p-4">
                 <ImageSwiper />
             </div>
         </div>

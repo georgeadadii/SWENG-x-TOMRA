@@ -80,10 +80,7 @@ export default function ImageSwiper() {
                 </Button>
             </div>
 
-            {/* ✅ ImageGrid is now included here */}
-            <div className="mt-20 w-full">
-                <ImageGrid images={images} setImages={setImages} />
-            </div>
+          
         </div>
     );
 }

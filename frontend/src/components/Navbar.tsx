@@ -10,7 +10,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="w-full bg-black p-3 flex items-center justify-between relative font-orbitron">
       <div className="flex items-center">
-        <Image src="/logo.png" alt="Logo" width={30} height={30} className="ml-12 mr-24" />
+        <Image src="/logo.png" alt="Logo" width={180} height={180} className="ml-12 mr-24" />
         <ul className="list-none flex ml-5">
           {["Products", "About", "Support"].map((text, index) => (
             <li

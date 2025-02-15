@@ -5,7 +5,7 @@ service ModelService {
 }
 
 message ResultsRequest {
-  bytes image_data = 1; 
+  string image_url = 1; 
   repeated string class_labels = 2; 
   repeated float confidences = 3; 
 }

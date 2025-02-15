@@ -33,6 +33,9 @@ const DashboardPage: React.FC = () => {
             <Sidebar />
             {/* ✅ Pass images & setImages as props */}
             <ImageGrid images={images} setImages={setImages} />
+        <div>
+            <h1 className="text-4xl font-bold mb-8">Gallery</h1>
+            <ImageGrid />
         </div>
     );
 };

@@ -8,6 +8,7 @@ service Neo4jService {
 message ClassificationResult {
   string class_label = 1;
   float confidence = 2;
+  string image_url = 3;
 }
 
 message StoreResultResponse {

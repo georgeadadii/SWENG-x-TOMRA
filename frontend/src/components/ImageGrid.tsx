@@ -71,8 +71,8 @@ const ImageGrid: FC = () => {
                             alt={selectedImage.classLabel}
                             className="max-w-full max-h-96 object-contain rounded-md mb-4 w-auto h-auto"
                         />
-                        <p className="text-lg font-semibold">AI Tag: {selectedImage.classLabel}</p>
-                        <p className="text-sm">Confidence: {selectedImage.confidence.toFixed(2)}</p>
+                        <p className="text-lg font-semibold text-black">AI Tag: {selectedImage.classLabel}</p>
+                        <p className="text-sm text-black">Confidence: {selectedImage.confidence.toFixed(2)}</p>
                         <div className="mt-4 flex justify-center gap-4">
                             <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
                                 Correct

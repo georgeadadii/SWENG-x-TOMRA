@@ -1,8 +1,11 @@
 'use client';
 
+import { Orbitron } from 'next/font/google';
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+
+const orbitron = Orbitron({ subsets: ['latin'] });
 
 export default function Home() {
   const router = useRouter();
@@ -13,8 +16,8 @@ export default function Home() {
   const updatePositions = useCallback(() => {
     setTags(prevTags => prevTags.map(tag => ({
       ...tag,
-      x: Math.max(10, Math.min(90, tag.x + (Math.random() - 0.5) * 2)), // Movement of tags
-      y: Math.max(10, Math.min(90, tag.y + (Math.random() - 0.5) * 2)), 
+      x: Math.max(10, Math.min(90, tag.x + (Math.random() - 0.5) * 1.2)), // Movement of tags
+      y: Math.max(10, Math.min(90, tag.y + (Math.random() - 0.5) * 1.2)), 
     })));
 
     setBlurPosition({
@@ -39,9 +42,9 @@ export default function Home() {
   }, [updatePositions]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-black font-orbitron overflow-hidden relative">
+    <div className={`flex flex-col items-center justify-center min-h-screen w-full bg-black overflow-hidden relative ${orbitron.className}`}>
       <div 
-        className="absolute inset-0 opacity-50" 
+        className="absolute inset-0 opacity-30" 
         style={{
           background: `radial-gradient(circle at ${blurPosition.x}% ${blurPosition.y}%, rgba(138, 43, 226, 0.8), rgba(0, 0, 255, 0.8))`, 
           filter: 'blur(100px)',
@@ -50,13 +53,14 @@ export default function Home() {
       />
       <Navbar />
       <div className="flex-grow flex items-center justify-center w-full p-5 relative z-10">
-        <div className="text-center w-[60vw] max-w-full h-[30vh] flex flex-col justify-between">
+        <div className="text-center w-[90vw] max-w-full h-[30vh] flex flex-col justify-between">
           <div 
             className={`transform transition-all duration-1000 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
           >
-            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent inline-block">
+            <h1 className="text-5xl md:text-6xl mb-5 font-black leading-relaxed bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent inline-block">
               Image Classification Engine
             </h1>
+
             <p className="text-lg md:text-xl text-white max-w-lg mx-auto mt-4 opacity-80">
               A powerful tool for automated image recognition and classification
             </p>

@@ -13,14 +13,16 @@ export const Button: React.FC<ButtonProps> = ({
   size = "default",
   ...props
 }) => {
-  const baseStyles = "font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+  const baseStyles =
+    "font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-300 transform hover:scale-105"
   const variantStyles = {
-    default: "bg-blue-600 text-white hover:bg-blue-700",
-    outline: "border border-gray-300 text-gray-700 hover:bg-gray-50",
+    default:
+      "bg-purple-700 text-white border-2 border-white hover:bg-purple-600 hover:text-white shadow-lg hover:shadow-purple-500/50",
+    outline: "border-2 border-white text-white hover:bg-white/20 hover:text-white shadow-lg hover:shadow-purple-500/50",
   }
   const sizeStyles = {
-    default: "px-4 py-2",
-    icon: "p-2",
+    default: "px-6 py-3 text-lg",
+    icon: "p-3",
   }
 
   const buttonClasses = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`

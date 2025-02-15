@@ -10,6 +10,10 @@
 
     Start the database and make sure it's running
 
+## To start GraphQL and FastAPI backend:
+
+    Run `main.py`
+
 ## To start the gRPC servers:
 
     Run `python model_service.py`

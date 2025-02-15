@@ -4,3 +4,5 @@ ultralytics
 neo4j
 pytest
 azure-storage-blob
+strawberry-graphql[debug-server]
+fastapi[all]

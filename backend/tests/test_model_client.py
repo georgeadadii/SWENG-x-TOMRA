@@ -1,32 +1,26 @@
-# import sys
-# import os
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-# import pytest
-# from model_client import load_image_data, process_image
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pytest
+from unittest.mock import patch, MagicMock
+from model_client import upload_to_azure, process_image, send_results_to_server
 
-# def test_load_image_data():
-#     """Test loading image data from a file."""
-#     # Create a temporary image file
-#     test_image_path = "test_image.jpg"
-#     with open(test_image_path, "wb") as f:
-#         f.write(b"fake image data")
+# Mocking the Azure BlobServiceClient and YOLO model
+@patch('model_client.BlobServiceClient')
+@patch('model_client.YOLO')
+def test_upload_to_azure(mock_yolo, mock_blob_service_client):
+    """Test uploading an image to Azure Blob Storage."""
 
-#     # Test loading the image
-#     image_data = load_image_data(test_image_path)
-#     assert isinstance(image_data, bytes)
-#     assert len(image_data) > 0
+    mock_blob_client = MagicMock()
+    mock_blob_service_client.from_connection_string.return_value.get_blob_client.return_value = mock_blob_client
 
-#     os.remove(test_image_path)
+    test_image_path = os.path.join(os.path.dirname(__file__), "test_images", "test_image.jpg")
 
-# def test_process_image():
-#     """Test processing an image using YOLO."""
-#     # Use a sample image (you can add a small test image to your repo)
-#     test_image_path = "backend/tests/test_images/test_image.jpg"
-#     if not os.path.exists(test_image_path):
-#         pytest.skip("Test image not found")
 
-#     # Test processing the image
-#     labels, confs = process_image(test_image_path)
-#     assert isinstance(labels, list)
-#     assert isinstance(confs, list)
-#     assert len(labels) == len(confs)
+    # Test uploading the image
+    image_url = upload_to_azure(test_image_path)
+    assert image_url.startswith("https://")
+    assert "test_image.jpg" in image_url
+
+if __name__ == "__main__":
+    pytest.main()

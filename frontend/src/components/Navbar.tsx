@@ -8,9 +8,9 @@ const Navbar: React.FC = () => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <nav className="w-full bg-black p-3 flex items-center justify-between relative font-orbitron">
+    <nav className="w-full bg-black p-3 flex items-center justify-between relative font-orbitron opacity-80">
       <div className="flex items-center">
-        <Image src="/logo.png" alt="Logo" width={180} height={180} className="ml-12 mr-24" />
+        <Image src="/logo.png" alt="Logo" width={160} height={160} className="ml-12 mr-24" />
         <ul className="list-none flex ml-5">
           {["Products", "About", "Support"].map((text, index) => (
             <li
@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
       <button className="bg-transparent text-white border border-white rounded-lg px-4 py-2 text-sm font-bold cursor-pointer mr-12 transition-all duration-300 hover:bg-white hover:text-black">
         Account
       </button>
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4/5 h-px bg-white"></div>
+      
     </nav>
   );
 };

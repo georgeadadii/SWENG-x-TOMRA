@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { FaImages, FaCog, FaSignOutAlt } from "react-icons/fa";
+import { FaImages, FaCog, FaRegHandPointer, FaSignOutAlt } from "react-icons/fa";
 import { CgPerformance } from "react-icons/cg";
 import Link from "next/link";
 
@@ -23,20 +23,25 @@ const Sidebar: React.FC = () => {
             <nav className="flex flex-col gap-4">
                 <Link
                     href="/dashboard/images"
-                    className={`flex items-center gap-3 p-3 rounded-md ${
-                        pathname === "/dashboard/images" ? "bg-gray-700" : "hover:bg-gray-800"
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-md ${pathname === "/dashboard/images" ? "bg-gray-700" : "hover:bg-gray-800"
+                        }`}
                 >
                     <FaImages /> Images
                 </Link>
 
                 <Link
                     href="/dashboard/metrics"
-                    className={`flex items-center gap-3 p-3 rounded-md ${
-                        pathname === "/dashboard/metrics" ? "bg-gray-700" : "hover:bg-gray-800"
-                    }`}
+                    className={`flex items-center gap-3 p-3 rounded-md ${pathname === "/dashboard/metrics" ? "bg-gray-700" : "hover:bg-gray-800"
+                        }`}
                 >
                     <CgPerformance /> Metrics
+                </Link>
+                <Link
+                    href="/dashboard/swiping"
+                    className={`flex items-center gap-3 p-3 rounded-md ${pathname === "/dashboard/swiping" ? "bg-gray-700" : "hover:bg-gray-800"
+                        }`}
+                >
+                    <FaRegHandPointer /> SwipeToConfirm
                 </Link>
 
                 {/* Uncomment if needed */}

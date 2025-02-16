@@ -41,18 +41,25 @@ def upload_to_azure(image_path):
 def process_image(image_path):
     """Process an image using YOLO and return class labels and confidences."""
     model = YOLO("yolo11n.pt")
+    preprocess_times = []
+    inference_times = []
+    postprocess_times = []
 
     results = model(image_path, verbose=False)
     boxes = results[0].boxes
+    speed_info = results[0].speed
+
+    preprocess_times.append(speed_info["preprocess"])
+    inference_times.append(speed_info["inference"])
+    postprocess_times.append(speed_info["postprocess"])
 
     confs = boxes.conf.tolist() if boxes.conf is not None else []
     class_ids = boxes.cls.tolist() if boxes.cls is not None else []
     labels = [results[0].names[int(cls)] for cls in class_ids]
 
-    return labels, confs
+    return labels, confs, preprocess_times, inference_times, postprocess_times
 
 def calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times, confidence_scores, total_detections, detected_labels, label_counts):
-    # 统计计算
     total_images = len(image_names)
     total_time = sum(preprocess_times) + sum(inference_times) + sum(postprocess_times)
     all_confidences = [conf for conf_list in confidence_scores for conf in conf_list]
@@ -92,7 +99,9 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
 
     average_inference_time = round(mean(inference_times), 2)
 
-    inference_time_distribution = {f"{i}-{i+1}ms": 0 for i in range(0, int(max(inference_times)) + 2)}
+    start = max(0, int(min(inference_times)) - 2)
+    end = int(max(inference_times)) + 2
+    inference_time_distribution = {f"{i}-{i + 1}ms": 0 for i in range(start, end)}
     for time in inference_times:
         index = int(time)
         inference_time_distribution[f"{index}-{index+1}ms"] += 1
@@ -159,6 +168,7 @@ def run():
         if not image_files:
             print("No images found in the unprocessed_images folder.")
             return
+
         image_names = []
         preprocess_times = []
         inference_times = []
@@ -176,26 +186,27 @@ def run():
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs = process_image(image_path)
+            labels, confs, pre_times, inf_times, post_times = process_image(image_path)
 
-            # Send the image and results to the server
-            send_results_to_server(image_url, labels, confs)
+            preprocess_times.extend(pre_times)
+            inference_times.extend(inf_times)
+            postprocess_times.extend(post_times)
 
             image_names.append(image_name)
-            preprocess_times.append(0)  # Replace with actual preprocess time if available
-            inference_times.append(0)  # Replace with actual inference time if available
-            postprocess_times.append(0)  # Replace with actual postprocess time if available
             confidence_scores.append(confs)
             total_detections.append(len(labels))
             detected_labels.append(labels)
             label_counts.append(Counter(labels))
 
-            # Calculate metrics
-            metrics = calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times,
-                                        confidence_scores, total_detections, detected_labels, label_counts)
+            # Send the image and results to the server
+            send_results_to_server(image_url, labels, confs)
 
-            # Send metrics to the server
-            send_metrics_to_server(metrics)
+        # Calculate metrics
+        metrics = calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times,
+                                    confidence_scores, total_detections, detected_labels, label_counts)
+
+        # Send metrics to the server
+        send_metrics_to_server(metrics)
 
     except Exception as e:
         print(f"Client error: {e}")

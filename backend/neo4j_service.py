@@ -33,7 +33,9 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         # Log the received metrics data
         print("Received StoreMetrics request:")
 
+        batch_id = str(uuid.uuid4())
         metric_id = str(uuid.uuid4())
+
         confidence_distribution_dict = dict(request.confidence_distribution)
         confidence_distribution_json = json.dumps(confidence_distribution_dict)
         inference_time_distribution_dict = dict(request.inference_time_distribution)
@@ -49,9 +51,18 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
 
         # Store the metrics in Neo4j
         with self.driver.session() as session:
+            # Create a BatchNode with batch_id
+            session.run(
+                """
+                CREATE (b:BatchNode {batch_id: $batch_id})
+                """,
+                batch_id=batch_id
+            )
+
             # Create a node for the metrics
             session.run(
                 """
+                MATCH (b:BatchNode {batch_id: $batch_id})
                 CREATE (m:Metrics {
                     metric_id: $metric_id,
                     total_images: $total_images, 
@@ -68,8 +79,10 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                     category_distribution: $category_distribution_json,
                     category_percentages: $category_percentages_json
                 })
+                CREATE (m)-[:BELONGS_TO]->(b)
                 """,
 
+                batch_id=batch_id,
                 metric_id=metric_id,
                 total_images=request.total_images,
                 total_time=request.total_time,
@@ -84,6 +97,7 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 num_of_labels_detection_distribution_json=num_of_labels_detection_distribution_json,
                 category_distribution_json=category_distribution_json,
                 category_percentages_json=category_percentages_json
+
             )
 
         return neo4j_service_pb2.StoreResultResponse(success=True)

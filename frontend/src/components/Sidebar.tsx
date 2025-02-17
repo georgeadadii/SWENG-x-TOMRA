@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { FaImages, FaCog, FaSignOutAlt } from "react-icons/fa";
+import { FaImages, FaCog, FaRegHandPointer, FaSignOutAlt } from "react-icons/fa";
 import { CgPerformance } from "react-icons/cg";
 import Link from "next/link";
 
@@ -37,6 +37,13 @@ const Sidebar: React.FC = () => {
                     }`}
                 >
                     <CgPerformance /> Metrics
+                </Link>
+                <Link
+                    href="/dashboard/swiping"
+                    className={`flex items-center gap-3 p-3 rounded-md ${pathname === "/dashboard/swiping" ? "bg-gray-700" : "hover:bg-gray-800"
+                        }`}
+                >
+                    <FaRegHandPointer /> SwipeToConfirm
                 </Link>
 
                 {/* Uncomment if needed */}

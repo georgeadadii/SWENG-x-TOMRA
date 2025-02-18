@@ -31,7 +31,7 @@ const Sidebar: React.FC = () => {
                             : "hover:bg-white/10"
                     }`}
                 >
-                    <FaImages /> Images
+                    <FaImages /> Gallery
                 </Link>
 
                 <Link

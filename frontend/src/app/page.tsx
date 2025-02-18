@@ -16,13 +16,13 @@ export default function Home() {
   const updatePositions = useCallback(() => {
     setTags(prevTags => prevTags.map(tag => ({
       ...tag,
-      x: Math.max(10, Math.min(90, tag.x + (Math.random() - 0.5) * 1.2)), 
-      y: Math.max(10, Math.min(90, tag.y + (Math.random() - 0.5) * 1.2)), 
+      x: Math.max(10, Math.min(90, tag.x + (Math.random() - 0.5) * 1.2)),
+      y: Math.max(10, Math.min(90, tag.y + (Math.random() - 0.5) * 1.2)),
     })));
 
     setBlurPosition({
-      x: Math.max(0, Math.min(100, blurPosition.x + (Math.random() - 0.5) * 5)), 
-      y: Math.max(0, Math.min(100, blurPosition.y + (Math.random() - 0.5) * 5)), 
+      x: Math.max(0, Math.min(100, blurPosition.x + (Math.random() - 0.5) * 5)),
+      y: Math.max(0, Math.min(100, blurPosition.y + (Math.random() - 0.5) * 5)),
     });
   }, [blurPosition]);
 
@@ -36,31 +36,29 @@ export default function Home() {
     }));
     setTags(newTags);
 
-    const interval = setInterval(updatePositions, 3000); 
+    const interval = setInterval(updatePositions, 3000);
     setShowContent(true);
     return () => clearInterval(interval);
   }, [updatePositions]);
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-screen w-full bg-black overflow-hidden relative ${roboto.className}`}>
-      <div 
-        className="absolute inset-0 opacity-30" 
+      <div
+        className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(circle at ${blurPosition.x}% ${blurPosition.y}%, rgba(138, 43, 226, 0.8), rgba(0, 0, 255, 0.8))`, 
+          background: `radial-gradient(circle at ${blurPosition.x}% ${blurPosition.y}%, rgba(138, 43, 226, 0.8), rgba(0, 0, 255, 0.8))`,
           filter: 'blur(100px)',
-          transition: 'all 3s ease-in-out' 
+          transition: 'all 3s ease-in-out'
         }}
       />
       <Navbar />
       <div className="flex-grow flex flex-col items-center justify-center w-full p-5 relative z-10">
-        {/* Heading (Pushed Down) */}
         <div className="relative z-50 mt-16">
           <h1 className="text-6xl md:text-7xl font-black leading-snug bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent inline-block text-center">
             Image Classification,<br /> Simplified.
           </h1>
         </div>
 
-        {/* System Description (Closer to Button) */}
         <div className="text-center w-[90vw] max-w-full h-[35vh] flex flex-col justify-center">
           <p className="text-sm md:text-xl text-white max-w-2xl mx-auto mt-6 opacity-90 leading-relaxed">
             Instantly detect objects with AI-driven image recognition and refine intelligent tags for precise, accurate datasets.
@@ -77,16 +75,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Floating Tags */}
       {tags.map((tag) => (
         <span
           key={tag.id}
-          className="absolute text-white bg-white/10 px-4 py-2 rounded-xl text-sm transition-all duration-2000 hover:scale-[2]" 
-          style={{ 
-            top: `${tag.y}%`, 
+          className="absolute text-white bg-white/10 px-4 py-2 rounded-xl text-sm transition-all duration-2000 hover:scale-[2]"
+          style={{
+            top: `${tag.y}%`,
             left: `${tag.x}%`,
             backdropFilter: 'blur(4px)',
-            transition: 'all 3s ease-in-out', 
+            opacity: 0.3,
+            transition: 'all 3s ease-in-out',
             cursor: 'pointer'
           }}
         >

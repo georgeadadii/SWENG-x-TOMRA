@@ -5,7 +5,7 @@ import client from "@/lib/apolloClient"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react"
-import { Button } from "../components/ui/button"
+import { Button } from "@/components/ui/button"
 
 interface ImageData {
   imageUrl: string
@@ -56,7 +56,7 @@ export default function ImageSwiper() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-black to-purple-900 overflow-hidden">
+    <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg">
       <AnimatePresence>
         {error && (
           <motion.div
@@ -64,9 +64,9 @@ export default function ImageSwiper() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 100, damping: 15 }}
-            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
+            className="fixed left-1/2 transform -translate-x-1/2 z-50"
           >
-            <div className="ml-[-140px] bg-red-500 text-white px-6 py-1 rounded-lg shadow-lg flex items-center space-x-2">
+            <div className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
               <AlertCircle className="w-5 h-5" />
               <p className="text-sm font-semibold">Oops! We couldn't load the images.</p>
             </div>
@@ -75,31 +75,31 @@ export default function ImageSwiper() {
       </AnimatePresence>
 
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-40">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
         </div>
       )}
 
-      <div className="flex items-center justify-center w-full max-w-4xl">
+      <div className="flex items-center justify-center w-full">
         <Button
           onClick={() => handleSwipe("left")}
           disabled={direction !== null || images.length === 0}
           size="icon"
           variant="outline"
-          className="mr-4"
+          className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
 
-        <div className="relative w-[300px] h-[400px] flex items-center justify-center">
+        <div className="relative w-[300px] h-[400px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
           {images.length === 0 && !loading ? (
-            <p className="text-white text-lg">No images available</p>
+            <p className="text-gray-500 text-lg">No images available</p>
           ) : (
             <AnimatePresence>
               {images.slice(0, 1).map((image, index) => (
                 <motion.div
                   key={`${image.imageUrl}-${activeImageIndex}`}
-                  className="absolute w-full h-full overflow-hidden rounded-lg shadow-2xl"
+                  className="absolute w-full h-full overflow-hidden rounded-xl"
                   initial={{ scale: 1, y: 0, opacity: 0 }}
                   animate={{
                     scale: 1,
@@ -118,7 +118,7 @@ export default function ImageSwiper() {
                   <img
                     src={image.imageUrl || "/placeholder.svg"}
                     alt={image.classLabel}
-                    className="w-full h-full object-cover rounded-lg shadow-md"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.src = "/placeholder.svg"
@@ -126,7 +126,7 @@ export default function ImageSwiper() {
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                     <p className="text-white text-lg font-bold">{image.classLabel}</p>
-                    <p className="text-purple-300 text-sm">Confidence: {(image.confidence * 100).toFixed(2)}%</p>
+                    <p className="text-gray-300 text-sm">Confidence: {(image.confidence * 100).toFixed(2)}%</p>
                   </div>
                 </motion.div>
               ))}
@@ -139,19 +139,12 @@ export default function ImageSwiper() {
           disabled={direction !== null || images.length === 0}
           size="icon"
           variant="outline"
-          className="ml-4"
+          className="ml-4 transition-all duration-300 ease-in-out hover:bg-green-50 hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]"
         >
           <ChevronRight className="h-6 w-6" />
         </Button>
       </div>
-
-      <div className="mt-4 text-white text-sm">
-        <p>Debug Info:</p>
-        <p>Images loaded: {images.length}</p>
-        <p>Active Image Index: {activeImageIndex}</p>
-        <p>Loading state: {loading ? "Loading" : "Not loading"}</p>
-        <p>Error state: {error ? "Error occurred" : "No error"}</p>
-      </div>
     </div>
   )
 }
+

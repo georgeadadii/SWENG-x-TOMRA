@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
       <div className="ml-12 flex items-center">
         <Image src="/logo.png" alt="Logo" width={160} height={160} />
         <div className="w-px h-10 bg-white mx-4"></div> {/* Vertical Line */}
-        <Image src="/logo2.png" alt="Logo 2" width={160} height={160} />
+        <Image src="/logo_whiteText.png" alt="Logo 2" width={160} height={160} />
       </div>
 
       <div className="flex items-center space-x-12 mr-12">

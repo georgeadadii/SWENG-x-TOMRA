@@ -21,15 +21,15 @@ driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 def get_results() -> List[ResultType]:
     """
     Queries the Neo4j database for all nodes with label 'Result'
-    and returns a list of results including image_url.
+    and returns a list of results including image_url from their related image node.
     """
     with driver.session() as session:
         result = session.run(
             """
-            MATCH (n:Result)
-            RETURN n.class_label AS class_label, 
-                   n.confidence AS confidence,
-                   n.image_url AS image_url
+            MATCH (r:Result)-[:CLASSIFIED_FROM]->(i:Image)
+            RETURN r.class_label AS class_label, 
+                   r.confidence AS confidence,
+                   i.image_url AS image_url
             """
         )
         return [

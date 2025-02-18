@@ -2,9 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { FaImages, FaCog, FaSignOutAlt } from "react-icons/fa";
+import { FaImages, FaRegHandPointer, FaSignOutAlt, FaCog } from "react-icons/fa";
 import { CgPerformance } from "react-icons/cg";
 import Link from "next/link";
+import { Roboto } from "next/font/google";
+
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "700"] });
 
 const Sidebar: React.FC = () => {
     const pathname = usePathname();
@@ -12,45 +15,48 @@ const Sidebar: React.FC = () => {
 
     const handleLogout = () => {
         console.log("Logging out...");
-        // Perform logout logic here (clear session, etc.)
-        router.push("/"); // Redirect to the landing page
+        router.push("/");
     };
 
     return (
-        <aside className="w-64 h-screen bg-gray-900 text-white flex flex-col p-5">
-            <h2 className="text-xl font-semibold mb-6">Dashboard</h2>
+        <aside className={`w-64 h-screen bg-black text-white flex flex-col p-6 ${roboto.className} shadow-lg`}> 
+            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400 mb-6">Dashboard</h2>
 
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-5">
                 <Link
                     href="/dashboard/images"
-                    className={`flex items-center gap-3 p-3 rounded-md ${
-                        pathname === "/dashboard/images" ? "bg-gray-700" : "hover:bg-gray-800"
+                    className={`flex items-center gap-4 p-3 rounded-md transition-all ${
+                        pathname === "/dashboard/images" 
+                            ? "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg" 
+                            : "hover:bg-white/10"
                     }`}
                 >
-                    <FaImages /> Images
+                    <FaImages /> Gallery
                 </Link>
 
                 <Link
                     href="/dashboard/metrics"
-                    className={`flex items-center gap-3 p-3 rounded-md ${
-                        pathname === "/dashboard/metrics" ? "bg-gray-700" : "hover:bg-gray-800"
+                    className={`flex items-center gap-4 p-3 rounded-md transition-all ${
+                        pathname === "/dashboard/metrics" 
+                            ? "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg" 
+                            : "hover:bg-white/10"
                     }`}
                 >
                     <CgPerformance /> Metrics
                 </Link>
-
-                {/* Uncomment if needed */}
-                {/* <Link
-                    href="/settings"
-                    className={`flex items-center gap-3 p-3 rounded-md ${
-                        pathname === "/settings" ? "bg-gray-700" : "hover:bg-gray-800"
+                <Link
+                    href="/dashboard/swiping"
+                    className={`flex items-center gap-4 p-3 rounded-md transition-all ${
+                        pathname === "/dashboard/swiping" 
+                            ? "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg" 
+                            : "hover:bg-white/10"
                     }`}
                 >
-                    <FaCog /> Settings
-                </Link> */}
+                    <FaRegHandPointer /> SwipeToConfirm
+                </Link>
 
                 <button
-                    className="flex items-center gap-3 p-3 rounded-md bg-red-600 hover:bg-red-700"
+                    className="flex items-center gap-4 p-3 rounded-md bg-red-700 transition-all hover:bg-red-900 shadow-lg"
                     onClick={handleLogout}
                 >
                     <FaSignOutAlt /> Logout

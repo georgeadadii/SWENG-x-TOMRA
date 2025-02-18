@@ -38,6 +38,12 @@
 
         Run the query "MATCH (i:[NODE]) RETURN i", where [NODE] is the name of the new label
 
+## To clear the database:
+
+    To delete all nodes currently stored in the database, run the following query:
+
+        MATCH (n) DETACH DELETE n;
+
 ## Changing gRPC contracts:
 
     gRPC contracts are in \protos\

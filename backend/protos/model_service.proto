@@ -2,15 +2,37 @@ syntax = "proto3";
 
 service ModelService {
   rpc StoreResults (ResultsRequest) returns (ResultsResponse);
+  rpc StoreMetrics (MetricsRequest) returns (MetricsResponse);
 }
 
 message ResultsRequest {
-  string image_url = 1; 
-  repeated string class_labels = 2; 
-  repeated float confidences = 3; 
+  string image_url = 1;
+  repeated string class_labels = 2;
+  repeated float confidences = 3;
 }
 
 message ResultsResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message MetricsRequest {
+  int32 total_images = 1;
+  float total_time = 2;
+  float average_confidence_score = 3;
+  map<string, float> average_confidence_for_labels = 4;
+  map<string, int32> confidence_distribution = 5;
+  map<int32, int32> detection_count_distribution = 6;
+  map<string, int32> category_distribution = 7;
+  map<string, float> category_percentages = 8;
+  float total_preprocessing_time = 9;
+  float total_inference_time = 10;
+  float total_postprocessing_time = 11;
+  float average_inference_time = 12;
+  map<string, int32> inference_time_distribution = 13;
+}
+
+message MetricsResponse {
   bool success = 1;
   string message = 2;
 }

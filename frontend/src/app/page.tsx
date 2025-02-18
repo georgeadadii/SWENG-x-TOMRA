@@ -83,8 +83,8 @@ export default function Home() {
             top: `${tag.y}%`,
             left: `${tag.x}%`,
             backdropFilter: 'blur(4px)',
-            opacity: 0.3,
-            transition: 'all 3s ease-in-out',
+            opacity: 0.5,
+            transition: 'all 3s ease-in-out', 
             cursor: 'pointer'
           }}
         >

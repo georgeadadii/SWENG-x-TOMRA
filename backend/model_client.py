@@ -1,7 +1,6 @@
 import grpc
 import model_service_pb2
 import model_service_pb2_grpc
-import neo4j_service_pb2
 import os
 from collections import Counter
 from statistics import mean

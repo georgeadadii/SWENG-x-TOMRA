@@ -31,7 +31,6 @@ export default function ImageSwiper() {
 
   useEffect(() => {
     if (data?.results) {
-      // Only load unique images that haven't been classified yet
       setImages(data.results)
     }
   }, [data])
@@ -46,13 +45,13 @@ export default function ImageSwiper() {
 
       setImages((prevImages) => {
         if (prevImages.length > 1) {
-          return prevImages.slice(1) // Remove the first image after classification
+          return prevImages.slice(1)
         } else {
-          return [] // If only one image left, set list to empty
+          return []
         }
       })
 
-      setActiveImageIndex((prevIndex) => prevIndex + 1) // Track classified images
+      setActiveImageIndex((prevIndex) => prevIndex + 1)
     }, 400)
   }
 
@@ -99,7 +98,7 @@ export default function ImageSwiper() {
             <AnimatePresence>
               {images.slice(0, 1).map((image, index) => (
                 <motion.div
-                  key={`${image.imageUrl}-${activeImageIndex}`} // Ensuring unique key per active image
+                  key={`${image.imageUrl}-${activeImageIndex}`}
                   className="absolute w-full h-full overflow-hidden rounded-lg shadow-2xl"
                   initial={{ scale: 1, y: 0, opacity: 0 }}
                   animate={{

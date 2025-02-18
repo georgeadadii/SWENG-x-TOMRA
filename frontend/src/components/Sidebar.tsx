@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { FaImages, FaRegHandPointer, FaSignOutAlt, FaCog } from "react-icons/fa";
 import { CgPerformance } from "react-icons/cg";
 import Link from "next/link";
-import { Orbitron } from "next/font/google";
+import { Roboto } from "next/font/google";
 
-const orbitron = Orbitron({ subsets: ['latin'] });
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "700"] });
 
 const Sidebar: React.FC = () => {
     const pathname = usePathname();
@@ -19,7 +19,7 @@ const Sidebar: React.FC = () => {
     };
 
     return (
-        <aside className={`w-64 h-screen bg-black text-white flex flex-col p-6 ${orbitron.className} shadow-lg`}> 
+        <aside className={`w-64 h-screen bg-black text-white flex flex-col p-6 ${roboto.className} shadow-lg`}> 
             <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400 mb-6">Dashboard</h2>
 
             <nav className="flex flex-col gap-5">
@@ -54,16 +54,6 @@ const Sidebar: React.FC = () => {
                 >
                     <FaRegHandPointer /> SwipeToConfirm
                 </Link>
-
-                {/* Uncomment if needed */}
-                {/* <Link
-                    href="/settings"
-                    className={`flex items-center gap-4 p-3 rounded-md ${
-                        pathname === "/settings" ? "bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg" : "hover:bg-white/10"
-                    }`}
-                >
-                    <FaCog /> Settings
-                </Link> */}
 
                 <button
                     className="flex items-center gap-4 p-3 rounded-md bg-red-700 transition-all hover:bg-red-900 shadow-lg"

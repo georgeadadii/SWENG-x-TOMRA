@@ -47,18 +47,18 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         batch_id = str(uuid.uuid4())
         metric_id = str(uuid.uuid4())
 
-        confidence_distribution_dict = dict(request.confidence_distribution)
-        confidence_distribution_json = json.dumps(confidence_distribution_dict)
-        inference_time_distribution_dict = dict(request.inference_time_distribution)
-        inference_time_distribution_json = json.dumps(inference_time_distribution_dict)
-        label_avg_confidences_dict = dict(request.average_confidence_for_labels)
-        label_avg_confidences_json = json.dumps(label_avg_confidences_dict)
-        num_of_labels_detection_distribution_dict = dict(request.detection_count_distribution)
-        num_of_labels_detection_distribution_json = json.dumps(num_of_labels_detection_distribution_dict)
-        category_distribution_dict = dict(request.category_distribution)
-        category_distribution_json = json.dumps(category_distribution_dict)
-        category_percentages_dict = dict(request.category_percentages)
-        category_percentages_json = json.dumps(category_percentages_dict)
+        confidence_distribution_list = sorted(request.confidence_distribution.items(),key=lambda x: float(x[0].split('-')[0]))
+        confidence_distribution_json = json.dumps(confidence_distribution_list)
+        inference_time_distribution_list = sorted(request.inference_time_distribution.items(),key=lambda x: int(x[0].split('-')[0]))
+        inference_time_distribution_json = json.dumps(inference_time_distribution_list)
+        label_avg_confidences_list = sorted(request.average_confidence_for_labels.items(), key=lambda x: x[0])
+        label_avg_confidences_json = json.dumps(label_avg_confidences_list)
+        num_of_labels_detection_distribution_list = sorted(request.detection_count_distribution.items(),key=lambda x: int(x[0]))
+        num_of_labels_detection_distribution_json = json.dumps(num_of_labels_detection_distribution_list)
+        category_distribution_list = sorted(request.category_distribution.items(), key=lambda x: x[0])
+        category_distribution_json = json.dumps(category_distribution_list)
+        category_percentages_list = sorted(request.category_percentages.items(), key=lambda x: x[0])
+        category_percentages_json = json.dumps(category_percentages_list)
 
         # Store the metrics in Neo4j
         with self.driver.session() as session:
@@ -92,7 +92,6 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 })
                 CREATE (m)-[:BELONGS_TO]->(b)
                 """,
-
                 batch_id=batch_id,
                 metric_id=metric_id,
                 total_images=request.total_images,
@@ -108,7 +107,6 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 num_of_labels_detection_distribution_json=num_of_labels_detection_distribution_json,
                 category_distribution_json=category_distribution_json,
                 category_percentages_json=category_percentages_json
-
             )
 
         return neo4j_service_pb2.StoreResultResponse(success=True)

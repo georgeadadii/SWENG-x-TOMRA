@@ -42,4 +42,8 @@ message MetricsResult {
   map<string, int32> box_size_distribution = 15;
   float average_box_proportion = 16;
   map<string, int32> box_proportion_distribution = 17;
+  float average_preprocess_time = 18;
+  float average_postprocess_time = 19;
+  map<string, int32> preprocess_time_distribution = 20;
+  map<string, int32> postprocess_time_distribution = 21;
 }

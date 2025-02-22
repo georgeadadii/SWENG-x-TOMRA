@@ -5,6 +5,7 @@ import os
 from collections import Counter
 from statistics import mean
 import uuid
+import json
 
 if os.getenv("CI") != "true":
     from ultralytics import YOLO
@@ -223,7 +224,7 @@ def send_results_to_server(image_url, labels, confs,batch_id):
         response = stub.StoreResults(request)
         print(f"Server response: {response.message}")
 
-def send_metrics_to_server(metrics,batch_id):
+def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
@@ -231,25 +232,25 @@ def send_metrics_to_server(metrics,batch_id):
             total_images=metrics["Total images"],
             total_time=metrics["Total time"],
             average_confidence_score=metrics["Average confidence score"],
-            average_confidence_for_labels=metrics["Average confidence for different labels"],
-            confidence_distribution=metrics["Confidence distribution"],
-            detection_count_distribution=metrics["Detection count distribution"],
-            category_distribution=metrics["Category distribution"],
-            category_percentages=metrics["Category percentages"],
+            average_confidence_for_labels=json.dumps(metrics["Average confidence for different labels"]),
+            confidence_distribution=json.dumps(metrics["Confidence distribution"]),
+            detection_count_distribution=json.dumps(metrics["Detection count distribution"]),
+            category_distribution=json.dumps(metrics["Category distribution"]),
+            category_percentages=json.dumps(metrics["Category percentages"]),
             total_preprocessing_time=metrics["Total preprocessing time"],
             total_inference_time=metrics["Total inference time"],
             total_postprocessing_time=metrics["Total postprocessing time"],
             average_inference_time=metrics["Average inference time"],
-            inference_time_distribution=metrics["Inference time distribution"],
+            inference_time_distribution=json.dumps(metrics["Inference time distribution"]),
             average_box_size=metrics["Average box size"],
-            box_size_distribution=metrics["Box size distribution"],
+            box_size_distribution=json.dumps(metrics["Box size distribution"]),
             average_box_proportion=metrics["Average box proportion"],
-            box_proportion_distribution= metrics["Box proportion distribution"],
+            box_proportion_distribution=json.dumps(metrics["Box proportion distribution"]),
             average_preprocess_time=metrics["Average preprocess time"],
             average_postprocess_time=metrics["Average postprocess time"],
-            preprocess_time_distribution=metrics["Preprocess time distribution"],
-            postprocess_time_distribution=metrics["Postprocess time distribution"],
-            batch_id = batch_id
+            preprocess_time_distribution=json.dumps(metrics["Preprocess time distribution"]),
+            postprocess_time_distribution=json.dumps(metrics["Postprocess time distribution"]),
+            batch_id=batch_id
         )
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")

@@ -10,6 +10,7 @@ message ClassificationResult {
   string class_label = 1;
   float confidence = 2;
   string image_url = 3;
+  string batch_id = 4;
 }
 
 message StoreResultResponse {
@@ -46,4 +47,5 @@ message MetricsResult {
   float average_postprocess_time = 19;
   map<string, int32> preprocess_time_distribution = 20;
   map<string, int32> postprocess_time_distribution = 21;
+  string batch_id = 22;
 }

@@ -47,6 +47,16 @@ def process_image(image_path):
     results = model(image_path, verbose=False)
     boxes = results[0].boxes
     speed_info = results[0].speed
+    height, width = results[0].orig_shape
+
+    bboxes = boxes.xyxy.tolist() if boxes.xyxy is not None else []
+    box_proportions = []
+    for bbox in bboxes:
+        x1, y1, x2, y2 = bbox
+        box_area = (x2 - x1) * (y2 - y1)
+        image_area = width * height
+        proportion = box_area / image_area
+        box_proportions.append(round(proportion, 4))
 
     preprocess_times.append(speed_info["preprocess"])
     inference_times.append(speed_info["inference"])
@@ -56,13 +66,50 @@ def process_image(image_path):
     class_ids = boxes.cls.tolist() if boxes.cls is not None else []
     labels = [results[0].names[int(cls)] for cls in class_ids]
 
-    return labels, confs, preprocess_times, inference_times, postprocess_times
+    bboxes = boxes.xyxy.tolist() if boxes.xyxy is not None else []
 
-def calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times, confidence_scores, total_detections, detected_labels, label_counts):
+    return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions
+
+def calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times, confidence_scores, total_detections, detected_labels, label_counts, bounding_boxes, box_proportions):
     total_images = len(image_names)
     total_time = sum(preprocess_times) + sum(inference_times) + sum(postprocess_times)
     all_confidences = [conf for conf_list in confidence_scores for conf in conf_list]
     average_confidence = round(mean(all_confidences), 2)
+
+    box_proportions = [p for proportions in box_proportions for p in proportions]
+    average_proportion = round(mean(box_proportions), 4) if box_proportions else 0
+
+    proportion_distribution = {f"{i / 10:.1f}-{(i + 1) / 10:.1f}": 0 for i in range(10)}
+    for prop in box_proportions:
+        index = int(prop * 10)
+        proportion_range = f"{index / 10:.1f}-{(index + 1) / 10:.1f}"
+        proportion_distribution[proportion_range] += 1
+
+    box_sizes = []
+    for bboxes in bounding_boxes:
+        for bbox in bboxes:
+            x1, y1, x2, y2 = bbox
+            width = x2 - x1
+            height = y2 - y1
+            area = width * height
+            box_sizes.append(int(area))
+
+    average_box_size = round(mean(box_sizes), 2) if box_sizes else 0
+
+    if box_sizes:
+        min_box = min(box_sizes)
+        max_box = max(box_sizes)
+        num_bins = 5
+        step = (max_box - min_box) / num_bins
+        box_size_distribution = {f"{int(min_box + i * step)}-{int(min_box + (i + 1) * step)}": 0 for i in range(num_bins)}
+        last_key = list(box_size_distribution.keys())[-1]
+        box_size_distribution[f"{int(min_box + (num_bins - 1) * step)}-{int(max_box)+1}"] = box_size_distribution.pop(last_key)
+        for size in box_sizes:
+            index = min(int((size - min_box) // step), num_bins - 1)
+            key = list(box_size_distribution.keys())[index]
+            box_size_distribution[key] += 1
+    else:
+        box_size_distribution = {"0.0-0.0": 0}
 
     label_avg_confidences = {}
     for label in set([label for labels in detected_labels for label in labels]):
@@ -104,6 +151,7 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
     for time in inference_times:
         index = int(time)
         inference_time_distribution[f"{index}-{index+1}ms"] += 1
+
     stats = {
         "Total images": total_images,
         "Total time": round(total_time, 2),
@@ -117,7 +165,11 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
         "Total inference time": round(total_inference_time, 2),
         "Total postprocessing time": round(total_postprocess_time, 2),
         "Average inference time": average_inference_time,
-        "Inference time distribution": inference_time_distribution
+        "Inference time distribution": inference_time_distribution,
+        "Average box size": average_box_size,
+        "Box size distribution": box_size_distribution,
+        "Average box proportion": average_proportion,
+        "Box proportion distribution": proportion_distribution
     }
     return stats
 
@@ -151,7 +203,11 @@ def send_metrics_to_server(metrics):
             total_inference_time=metrics["Total inference time"],
             total_postprocessing_time=metrics["Total postprocessing time"],
             average_inference_time=metrics["Average inference time"],
-            inference_time_distribution=metrics["Inference time distribution"]
+            inference_time_distribution=metrics["Inference time distribution"],
+            average_box_size=metrics["Average box size"],
+            box_size_distribution=metrics["Box size distribution"],
+            average_box_proportion=metrics["Average box proportion"],
+            box_proportion_distribution= metrics["Box proportion distribution"]
         )
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
@@ -176,6 +232,8 @@ def run():
         total_detections = []
         detected_labels = []
         label_counts = []
+        bounding_boxes = []
+        box_proportions = []
 
         # Process each image and send results to the server
         for image_name in image_files:
@@ -185,7 +243,7 @@ def run():
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs, pre_times, inf_times, post_times = process_image(image_path)
+            labels, confs, bboxes, pre_times, inf_times, post_times, proportions = process_image(image_path)
 
             preprocess_times.extend(pre_times)
             inference_times.extend(inf_times)
@@ -196,13 +254,14 @@ def run():
             total_detections.append(len(labels))
             detected_labels.append(labels)
             label_counts.append(Counter(labels))
+            bounding_boxes.append(bboxes)
+            box_proportions.append(proportions)
 
             # Send the image and results to the server
             send_results_to_server(image_url, labels, confs)
 
         # Calculate metrics
-        metrics = calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times,
-                                    confidence_scores, total_detections, detected_labels, label_counts)
+        metrics = calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times,confidence_scores, total_detections, detected_labels, label_counts, bounding_boxes, box_proportions)
 
         # Send metrics to the server
         send_metrics_to_server(metrics)

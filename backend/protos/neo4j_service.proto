@@ -41,5 +41,5 @@ message MetricsResult {
   float average_box_size = 14;
   map<string, int32> box_size_distribution = 15;
   float average_box_proportion = 16;
-    map<string, int32> box_proportion_distribution = 17;
+  map<string, int32> box_proportion_distribution = 17;
 }

@@ -49,6 +49,8 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
 
         confidence_distribution_list = sorted(request.confidence_distribution.items(),key=lambda x: float(x[0].split('-')[0]))
         confidence_distribution_json = json.dumps(confidence_distribution_list)
+        box_size_distribution_list = sorted(request.box_size_distribution.items(),key=lambda x: int(x[0].split('-')[0]))
+        box_size_distribution_json = json.dumps(box_size_distribution_list)
         inference_time_distribution_list = sorted(request.inference_time_distribution.items(),key=lambda x: int(x[0].split('-')[0]))
         inference_time_distribution_json = json.dumps(inference_time_distribution_list)
         label_avg_confidences_list = sorted(request.average_confidence_for_labels.items(), key=lambda x: x[0])
@@ -59,6 +61,9 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         category_distribution_json = json.dumps(category_distribution_list)
         category_percentages_list = sorted(request.category_percentages.items(), key=lambda x: x[0])
         category_percentages_json = json.dumps(category_percentages_list)
+        box_proportion_distribution_list = sorted(request.box_proportion_distribution.items(),
+                                                  key=lambda x: float(x[0].split('-')[0]))
+        box_proportion_distribution_json = json.dumps(box_proportion_distribution_list)
 
         # Store the metrics in Neo4j
         with self.driver.session() as session:
@@ -88,7 +93,11 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                     label_avg_confidences: $label_avg_confidences_json,
                     num_of_labels_detection_distribution: $num_of_labels_detection_distribution_json,
                     category_distribution: $category_distribution_json,
-                    category_percentages: $category_percentages_json
+                    category_percentages: $category_percentages_json,
+                    box_size_distribution: $box_size_distribution_json,
+                    average_box_size: $average_box_size,
+                    box_proportion_distribution: $box_proportion_distribution_json,
+                    average_box_proportion: $average_box_proportion
                 })
                 CREATE (m)-[:BELONGS_TO]->(b)
                 """,
@@ -106,7 +115,11 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 label_avg_confidences_json=label_avg_confidences_json,
                 num_of_labels_detection_distribution_json=num_of_labels_detection_distribution_json,
                 category_distribution_json=category_distribution_json,
-                category_percentages_json=category_percentages_json
+                category_percentages_json=category_percentages_json,
+                box_size_distribution_json=box_size_distribution_json,
+                average_box_size=request.average_box_size,
+                box_proportion_distribution_json=box_proportion_distribution_json,
+                average_box_proportion=request.average_box_proportion
             )
 
         return neo4j_service_pb2.StoreResultResponse(success=True)

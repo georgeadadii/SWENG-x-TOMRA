@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_service.proto\"N\n\x0eResultsRequest\x12\x11\n\timage_url\x18\x01 \x01(\t\x12\x14\n\x0c\x63lass_labels\x18\x02 \x03(\t\x12\x13\n\x0b\x63onfidences\x18\x03 \x03(\x02\"3\n\x0fResultsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\xc3\x08\n\x0eMetricsRequest\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12V\n\x1d\x61verage_confidence_for_labels\x18\x04 \x03(\x0b\x32/.MetricsRequest.AverageConfidenceForLabelsEntry\x12L\n\x17\x63onfidence_distribution\x18\x05 \x03(\x0b\x32+.MetricsRequest.ConfidenceDistributionEntry\x12U\n\x1c\x64\x65tection_count_distribution\x18\x06 \x03(\x0b\x32/.MetricsRequest.DetectionCountDistributionEntry\x12H\n\x15\x63\x61tegory_distribution\x18\x07 \x03(\x0b\x32).MetricsRequest.CategoryDistributionEntry\x12\x46\n\x14\x63\x61tegory_percentages\x18\x08 \x03(\x0b\x32(.MetricsRequest.CategoryPercentagesEntry\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12S\n\x1binference_time_distribution\x18\r \x03(\x0b\x32..MetricsRequest.InferenceTimeDistributionEntry\x1a\x41\n\x1f\x41verageConfidenceForLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a=\n\x1b\x43onfidenceDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x41\n\x1f\x44\x65tectionCountDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a;\n\x19\x43\x61tegoryDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a:\n\x18\x43\x61tegoryPercentagesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a@\n\x1eInferenceTimeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"3\n\x0fMetricsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2t\n\x0cModelService\x12\x31\n\x0cStoreResults\x12\x0f.ResultsRequest\x1a\x10.ResultsResponse\x12\x31\n\x0cStoreMetrics\x12\x0f.MetricsRequest\x1a\x10.MetricsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_service.proto\"N\n\x0eResultsRequest\x12\x11\n\timage_url\x18\x01 \x01(\t\x12\x14\n\x0c\x63lass_labels\x18\x02 \x03(\t\x12\x13\n\x0b\x63onfidences\x18\x03 \x03(\x02\"3\n\x0fResultsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x99\x0b\n\x0eMetricsRequest\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12V\n\x1d\x61verage_confidence_for_labels\x18\x04 \x03(\x0b\x32/.MetricsRequest.AverageConfidenceForLabelsEntry\x12L\n\x17\x63onfidence_distribution\x18\x05 \x03(\x0b\x32+.MetricsRequest.ConfidenceDistributionEntry\x12U\n\x1c\x64\x65tection_count_distribution\x18\x06 \x03(\x0b\x32/.MetricsRequest.DetectionCountDistributionEntry\x12H\n\x15\x63\x61tegory_distribution\x18\x07 \x03(\x0b\x32).MetricsRequest.CategoryDistributionEntry\x12\x46\n\x14\x63\x61tegory_percentages\x18\x08 \x03(\x0b\x32(.MetricsRequest.CategoryPercentagesEntry\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12S\n\x1binference_time_distribution\x18\r \x03(\x0b\x32..MetricsRequest.InferenceTimeDistributionEntry\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12G\n\x15\x62ox_size_distribution\x18\x0f \x03(\x0b\x32(.MetricsRequest.BoxSizeDistributionEntry\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12S\n\x1b\x62ox_proportion_distribution\x18\x11 \x03(\x0b\x32..MetricsRequest.BoxProportionDistributionEntry\x1a\x41\n\x1f\x41verageConfidenceForLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a=\n\x1b\x43onfidenceDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x41\n\x1f\x44\x65tectionCountDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a;\n\x19\x43\x61tegoryDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a:\n\x18\x43\x61tegoryPercentagesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a@\n\x1eInferenceTimeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a:\n\x18\x42oxSizeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a@\n\x1e\x42oxProportionDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"3\n\x0fMetricsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2t\n\x0cModelService\x12\x31\n\x0cStoreResults\x12\x0f.ResultsRequest\x1a\x10.ResultsResponse\x12\x31\n\x0cStoreMetrics\x12\x0f.MetricsRequest\x1a\x10.MetricsResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -43,26 +43,34 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_METRICSREQUEST_CATEGORYPERCENTAGESENTRY']._serialized_options = b'8\001'
   _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._loaded_options = None
   _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
+  _globals['_METRICSREQUEST_BOXSIZEDISTRIBUTIONENTRY']._loaded_options = None
+  _globals['_METRICSREQUEST_BOXSIZEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
+  _globals['_METRICSREQUEST_BOXPROPORTIONDISTRIBUTIONENTRY']._loaded_options = None
+  _globals['_METRICSREQUEST_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_options = b'8\001'
   _globals['_RESULTSREQUEST']._serialized_start=23
   _globals['_RESULTSREQUEST']._serialized_end=101
   _globals['_RESULTSRESPONSE']._serialized_start=103
   _globals['_RESULTSRESPONSE']._serialized_end=154
   _globals['_METRICSREQUEST']._serialized_start=157
-  _globals['_METRICSREQUEST']._serialized_end=1248
-  _globals['_METRICSREQUEST_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_start=866
-  _globals['_METRICSREQUEST_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_end=931
-  _globals['_METRICSREQUEST_CONFIDENCEDISTRIBUTIONENTRY']._serialized_start=933
-  _globals['_METRICSREQUEST_CONFIDENCEDISTRIBUTIONENTRY']._serialized_end=994
-  _globals['_METRICSREQUEST_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_start=996
-  _globals['_METRICSREQUEST_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_end=1061
-  _globals['_METRICSREQUEST_CATEGORYDISTRIBUTIONENTRY']._serialized_start=1063
-  _globals['_METRICSREQUEST_CATEGORYDISTRIBUTIONENTRY']._serialized_end=1122
-  _globals['_METRICSREQUEST_CATEGORYPERCENTAGESENTRY']._serialized_start=1124
-  _globals['_METRICSREQUEST_CATEGORYPERCENTAGESENTRY']._serialized_end=1182
-  _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_start=1184
-  _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_end=1248
-  _globals['_METRICSRESPONSE']._serialized_start=1250
-  _globals['_METRICSRESPONSE']._serialized_end=1301
-  _globals['_MODELSERVICE']._serialized_start=1303
-  _globals['_MODELSERVICE']._serialized_end=1419
+  _globals['_METRICSREQUEST']._serialized_end=1590
+  _globals['_METRICSREQUEST_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_start=1082
+  _globals['_METRICSREQUEST_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_end=1147
+  _globals['_METRICSREQUEST_CONFIDENCEDISTRIBUTIONENTRY']._serialized_start=1149
+  _globals['_METRICSREQUEST_CONFIDENCEDISTRIBUTIONENTRY']._serialized_end=1210
+  _globals['_METRICSREQUEST_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_start=1212
+  _globals['_METRICSREQUEST_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_end=1277
+  _globals['_METRICSREQUEST_CATEGORYDISTRIBUTIONENTRY']._serialized_start=1279
+  _globals['_METRICSREQUEST_CATEGORYDISTRIBUTIONENTRY']._serialized_end=1338
+  _globals['_METRICSREQUEST_CATEGORYPERCENTAGESENTRY']._serialized_start=1340
+  _globals['_METRICSREQUEST_CATEGORYPERCENTAGESENTRY']._serialized_end=1398
+  _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_start=1400
+  _globals['_METRICSREQUEST_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_end=1464
+  _globals['_METRICSREQUEST_BOXSIZEDISTRIBUTIONENTRY']._serialized_start=1466
+  _globals['_METRICSREQUEST_BOXSIZEDISTRIBUTIONENTRY']._serialized_end=1524
+  _globals['_METRICSREQUEST_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_start=1526
+  _globals['_METRICSREQUEST_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_end=1590
+  _globals['_METRICSRESPONSE']._serialized_start=1592
+  _globals['_METRICSRESPONSE']._serialized_end=1643
+  _globals['_MODELSERVICE']._serialized_start=1645
+  _globals['_MODELSERVICE']._serialized_end=1761
 # @@protoc_insertion_point(module_scope)

@@ -38,4 +38,8 @@ message MetricsResult {
   float total_postprocessing_time = 11;
   float average_inference_time = 12;
   map<string, int32> inference_time_distribution = 13;
+  float average_box_size = 14;
+  map<string, int32> box_size_distribution = 15;
+  float average_box_proportion = 16;
+    map<string, int32> box_proportion_distribution = 17;
 }

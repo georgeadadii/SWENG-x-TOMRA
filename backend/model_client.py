@@ -79,6 +79,9 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
     box_proportions = [p for proportions in box_proportions for p in proportions]
     average_proportion = round(mean(box_proportions), 4) if box_proportions else 0
 
+    average_preprocess = round(mean(preprocess_times), 2) if preprocess_times else 0
+    average_postprocess = round(mean(postprocess_times), 2) if postprocess_times else 0
+
     proportion_distribution = {f"{i / 10:.1f}-{(i + 1) / 10:.1f}": 0 for i in range(10)}
     for prop in box_proportions:
         index = int(prop * 10)
@@ -152,6 +155,34 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
         index = int(time)
         inference_time_distribution[f"{index}-{index+1}ms"] += 1
 
+    preprocess_dist = {}
+    if preprocess_times:
+        min_pre = min(preprocess_times)
+        max_pre = max(preprocess_times)
+        bin_width = (max_pre - min_pre) / 10
+        for i in range(10):
+            lower = round(min_pre + i * bin_width, 2)
+            upper = round(min_pre + (i + 1) * bin_width, 2)
+            preprocess_dist[f"{lower:.2f}-{upper:.2f}"] = 0
+        for time in preprocess_times:
+            index = min(int((time - min_pre) // bin_width), 9)
+            key = list(preprocess_dist.keys())[index]
+            preprocess_dist[key] += 1
+
+    postprocess_dist = {}
+    if postprocess_times:
+        min_post = min(postprocess_times)
+        max_post = max(postprocess_times)
+        bin_width = (max_post - min_post) / 10
+        for i in range(10):
+            lower = round(min_post + i * bin_width, 2)
+            upper = round(min_post + (i + 1) * bin_width, 2)
+            postprocess_dist[f"{lower:.2f}-{upper:.2f}"] = 0
+        for time in postprocess_times:
+            index = min(int((time - min_post) // bin_width), 9)
+            key = list(postprocess_dist.keys())[index]
+            postprocess_dist[key] += 1
+
     stats = {
         "Total images": total_images,
         "Total time": round(total_time, 2),
@@ -169,7 +200,11 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
         "Average box size": average_box_size,
         "Box size distribution": box_size_distribution,
         "Average box proportion": average_proportion,
-        "Box proportion distribution": proportion_distribution
+        "Box proportion distribution": proportion_distribution,
+        "Average preprocess time": average_preprocess,
+        "Average postprocess time": average_postprocess,
+        "Preprocess time distribution": preprocess_dist,
+        "Postprocess time distribution": postprocess_dist,
     }
     return stats
 
@@ -207,7 +242,11 @@ def send_metrics_to_server(metrics):
             average_box_size=metrics["Average box size"],
             box_size_distribution=metrics["Box size distribution"],
             average_box_proportion=metrics["Average box proportion"],
-            box_proportion_distribution= metrics["Box proportion distribution"]
+            box_proportion_distribution= metrics["Box proportion distribution"],
+            average_preprocess_time=metrics["Average preprocess time"],
+            average_postprocess_time=metrics["Average postprocess time"],
+            preprocess_time_distribution=metrics["Preprocess time distribution"],
+            postprocess_time_distribution=metrics["Postprocess time distribution"],
         )
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")

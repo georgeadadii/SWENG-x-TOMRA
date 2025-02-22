@@ -61,9 +61,12 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         category_distribution_json = json.dumps(category_distribution_list)
         category_percentages_list = sorted(request.category_percentages.items(), key=lambda x: x[0])
         category_percentages_json = json.dumps(category_percentages_list)
-        box_proportion_distribution_list = sorted(request.box_proportion_distribution.items(),
-                                                  key=lambda x: float(x[0].split('-')[0]))
+        box_proportion_distribution_list = sorted(request.box_proportion_distribution.items(),key=lambda x: float(x[0].split('-')[0]))
         box_proportion_distribution_json = json.dumps(box_proportion_distribution_list)
+        preprocess_distribution_list = sorted(request.preprocess_time_distribution.items(),key=lambda x: float(x[0].split("-")[0]))
+        preprocess_distribution_json = json.dumps(preprocess_distribution_list)
+        postprocess_distribution_list = sorted(request.postprocess_time_distribution.items(),key=lambda x: float(x[0].split("-")[0]))
+        postprocess_distribution_json = json.dumps(postprocess_distribution_list)
 
         # Store the metrics in Neo4j
         with self.driver.session() as session:
@@ -97,7 +100,11 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                     box_size_distribution: $box_size_distribution_json,
                     average_box_size: $average_box_size,
                     box_proportion_distribution: $box_proportion_distribution_json,
-                    average_box_proportion: $average_box_proportion
+                    average_box_proportion: $average_box_proportion,
+                    average_preprocess_time: $average_preprocess_time,
+                    average_postprocess_time: $average_postprocess_time,
+                    preprocess_time_distribution: $preprocess_distribution_json,
+                    postprocess_time_distribution: $postprocess_distribution_json
                 })
                 CREATE (m)-[:BELONGS_TO]->(b)
                 """,
@@ -119,7 +126,11 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 box_size_distribution_json=box_size_distribution_json,
                 average_box_size=request.average_box_size,
                 box_proportion_distribution_json=box_proportion_distribution_json,
-                average_box_proportion=request.average_box_proportion
+                average_box_proportion=request.average_box_proportion,
+                average_preprocess_time=request.average_preprocess_time,
+                average_postprocess_time=request.average_postprocess_time,
+                preprocess_distribution_json=preprocess_distribution_json,
+                postprocess_distribution_json=postprocess_distribution_json,
             )
 
         return neo4j_service_pb2.StoreResultResponse(success=True)

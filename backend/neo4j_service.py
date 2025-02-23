@@ -3,7 +3,6 @@ from concurrent import futures
 import neo4j_service_pb2
 import neo4j_service_pb2_grpc
 from neo4j import GraphDatabase
-import json
 import uuid
 
 class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
@@ -51,15 +50,8 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         return neo4j_service_pb2.StoreResultResponse(success=True)
 
     def StoreMetrics(self, request, context):
-        print("Received StoreMetrics request:")
         metric_id = str(uuid.uuid4())
-
         batch_id = request.batch_id
-        with self.driver.session() as session:
-            session.run(
-                "MERGE (b:BatchNode {batch_id: $batch_id})",
-                batch_id=batch_id
-            )
 
         with self.driver.session() as session:
             session.run(

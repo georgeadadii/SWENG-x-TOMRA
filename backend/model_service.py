@@ -38,7 +38,8 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 neo4j_request = neo4j_service_pb2.ClassificationResult(
                 class_label=label,
                 confidence=confidence,
-                image_url=image_url
+                image_url=image_url,
+                batch_id=request.batch_id
                 )
                 neo4j_response = self.neo4j_stub.StoreResult(neo4j_request)
                 print("Neo4j StoreResult response:", neo4j_response.success)
@@ -75,6 +76,7 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 average_postprocess_time=request.average_postprocess_time,
                 preprocess_time_distribution=request.preprocess_time_distribution,
                 postprocess_time_distribution=request.postprocess_time_distribution,
+                batch_id=request.batch_id
             )
             neo4j_response = self.neo4j_stub.StoreMetrics(neo4j_metrics_request)
             print("Neo4j StoreMetrics response:", neo4j_response.success)

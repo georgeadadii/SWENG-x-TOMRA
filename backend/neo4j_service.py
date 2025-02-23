@@ -18,11 +18,21 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         print("Confidence:", request.confidence)
         print("URL:", request.image_url)
 
+        with self.driver.session() as session:
+            session.run(
+                "MERGE (b:BatchNode {batch_id: $batch_id})",
+                batch_id=request.batch_id
+            )
+
         # Create or match an image node
         with self.driver.session() as session:
             session.run(
-                "MERGE (i:Image {image_url: $image_url})",
-                image_url=request.image_url
+                    """MERGE (i:Image {image_url: $image_url})
+                    MERGE (b:BatchNode {batch_id: $batch_id})
+                    MERGE (i)-[:BELONGS_TO]->(b)
+                """,
+                image_url=request.image_url,
+                batch_id=request.batch_id
             )
 
         # Store the result in Neo4j
@@ -43,8 +53,6 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
     def StoreMetrics(self, request, context):
         # Log the received metrics data
         print("Received StoreMetrics request:")
-
-        batch_id = str(uuid.uuid4())
         metric_id = str(uuid.uuid4())
 
         confidence_distribution_list = sorted(request.confidence_distribution.items(),key=lambda x: float(x[0].split('-')[0]))
@@ -68,16 +76,16 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         postprocess_distribution_list = sorted(request.postprocess_time_distribution.items(),key=lambda x: float(x[0].split("-")[0]))
         postprocess_distribution_json = json.dumps(postprocess_distribution_list)
 
-        # Store the metrics in Neo4j
+
+        batch_id = request.batch_id
         with self.driver.session() as session:
-            # Create a BatchNode with batch_id
             session.run(
-                """
-                CREATE (b:BatchNode {batch_id: $batch_id})
-                """,
+                "MERGE (b:BatchNode {batch_id: $batch_id})",
                 batch_id=batch_id
             )
 
+        # Store the metrics in Neo4j
+        with self.driver.session() as session:
             # Create a node for the metrics
             session.run(
                 """

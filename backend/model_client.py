@@ -4,6 +4,7 @@ import model_service_pb2_grpc
 import os
 from collections import Counter
 from statistics import mean
+import uuid
 
 if os.getenv("CI") != "true":
     from ultralytics import YOLO
@@ -209,19 +210,20 @@ def calculate_metrics(image_names, preprocess_times, inference_times, postproces
     return stats
 
 
-def send_results_to_server(image_url, labels, confs):
+def send_results_to_server(image_url, labels, confs,batch_id):
     """Send image data and results to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
         request = model_service_pb2.ResultsRequest(
             image_url=image_url,
             class_labels=labels,
-            confidences=confs
+            confidences=confs,
+            batch_id=batch_id
         )
         response = stub.StoreResults(request)
         print(f"Server response: {response.message}")
 
-def send_metrics_to_server(metrics):
+def send_metrics_to_server(metrics,batch_id):
     """Send computed metrics to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
@@ -247,6 +249,7 @@ def send_metrics_to_server(metrics):
             average_postprocess_time=metrics["Average postprocess time"],
             preprocess_time_distribution=metrics["Preprocess time distribution"],
             postprocess_time_distribution=metrics["Postprocess time distribution"],
+            batch_id = batch_id
         )
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
@@ -263,6 +266,7 @@ def run():
             print("No images found in the unprocessed_images folder.")
             return
 
+        batch_id = str(uuid.uuid4())
         image_names = []
         preprocess_times = []
         inference_times = []
@@ -297,13 +301,13 @@ def run():
             box_proportions.append(proportions)
 
             # Send the image and results to the server
-            send_results_to_server(image_url, labels, confs)
+            send_results_to_server(image_url, labels, confs,batch_id)
 
         # Calculate metrics
         metrics = calculate_metrics(image_names, preprocess_times, inference_times, postprocess_times,confidence_scores, total_detections, detected_labels, label_counts, bounding_boxes, box_proportions)
 
         # Send metrics to the server
-        send_metrics_to_server(metrics)
+        send_metrics_to_server(metrics,batch_id)
 
     except Exception as e:
         print(f"Client error: {e}")

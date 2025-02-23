@@ -9,6 +9,7 @@ message ResultsRequest {
   string image_url = 1;
   repeated string class_labels = 2;
   repeated float confidences = 3;
+  string batch_id = 4;
 }
 
 message ResultsResponse {
@@ -38,6 +39,7 @@ message MetricsRequest {
   float average_postprocess_time = 19;
   map<string, int32> preprocess_time_distribution = 20;
   map<string, int32> postprocess_time_distribution = 21;
+  string batch_id = 22;
 }
 
 message MetricsResponse {

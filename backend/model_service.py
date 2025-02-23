@@ -67,6 +67,14 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 total_postprocessing_time=request.total_postprocessing_time,
                 average_inference_time=request.average_inference_time,
                 inference_time_distribution=request.inference_time_distribution,
+                average_box_size=request.average_box_size,
+                box_size_distribution=request.box_size_distribution,
+                average_box_proportion = request.average_box_proportion,
+                box_proportion_distribution = request.box_proportion_distribution,
+                average_preprocess_time=request.average_preprocess_time,
+                average_postprocess_time=request.average_postprocess_time,
+                preprocess_time_distribution=request.preprocess_time_distribution,
+                postprocess_time_distribution=request.postprocess_time_distribution,
             )
             neo4j_response = self.neo4j_stub.StoreMetrics(neo4j_metrics_request)
             print("Neo4j StoreMetrics response:", neo4j_response.success)

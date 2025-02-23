@@ -72,11 +72,14 @@ def process_image(image_path):
 
 def calculate_total_images(image_names):
     return len(image_names)
+
 def calculate_total_time(pre_times, inf_times, post_times):
     return round(sum(pre_times) + sum(inf_times) + sum(post_times), 2)
+
 def calculate_avg_confidence(confidence_scores):
     all_confidences = [conf for conf_list in confidence_scores for conf in conf_list]
     return round(mean(all_confidences), 2) if all_confidences else 0
+
 def calculate_label_avg_confidences(detected_labels, confidence_scores):
     label_avg_confidences = {}
     for label in set([label for labels in detected_labels for label in labels]):
@@ -87,7 +90,8 @@ def calculate_label_avg_confidences(detected_labels, confidence_scores):
                     label_confidences.append(confidence_scores[i][j])
         if label_confidences:
             label_avg_confidences[label] = round(mean(label_confidences), 2)
-    return label_avg_confidences  # 返回结果
+    return label_avg_confidences  
+
 def calculate_confidence_distribution(confidence_scores):
     all_confidences = [conf for conf_list in confidence_scores for conf in conf_list]
     dist = {f"{i/10:.1f}-{(i+1)/10:.1f}":0 for i in range(10)}
@@ -95,29 +99,37 @@ def calculate_confidence_distribution(confidence_scores):
         index = min(int(conf*10), 9)
         dist[list(dist.keys())[index]] += 1
     return dist
+
 def calculate_detection_distribution(total_detections):
     if not total_detections:
         return {}
     detection_distribution = {i: 0 for i in range(0, max(total_detections) + 1)}
     for detections in total_detections:
         detection_distribution[detections] += 1
-    return detection_distribution  # 返回字典
+    return detection_distribution  
+
 def calculate_category_distribution(label_counts):
     category_dist = Counter()
     for lc in label_counts:
         category_dist.update(lc)
     return dict(category_dist)
+
 def calculate_category_percentages(category_dist):
     total = sum(category_dist.values())
     return {k: round(v/total*100, 2) for k, v in category_dist.items()} if total else {}
+
 def calculate_total_preprocessing_time(pre_times):
     return round(sum(pre_times), 2)
+
 def calculate_total_inference_time(inf_times):
     return round(sum(inf_times), 2)
+
 def calculate_total_postprocessing_time(post_times):
     return round(sum(post_times), 2)
+
 def calculate_avg_inference_time(inf_times):
     return round(mean(inf_times), 2) if inf_times else 0
+
 def calculate_inference_time_distribution(inference_times):
     if not inference_times:
         return {"0-1ms": 0}
@@ -131,12 +143,14 @@ def calculate_inference_time_distribution(inference_times):
             continue
         inference_time_distribution[key] += 1
     return inference_time_distribution
+
 def calculate_avg_box_size(bounding_boxes, orig_shapes):
     box_sizes = []
     for bboxes, (h, w) in zip(bounding_boxes, orig_shapes):
         for x1, y1, x2, y2 in bboxes:
             box_sizes.append((x2-x1) * (y2-y1))
     return round(mean(box_sizes), 2) if box_sizes else 0
+
 def calculate_box_size_distribution(bounding_boxes, orig_shapes):
     box_sizes = []
     for bboxes, (h, w) in zip(bounding_boxes, orig_shapes):
@@ -162,9 +176,11 @@ def calculate_box_size_distribution(bounding_boxes, orig_shapes):
         key = list(distribution.keys())[index]
         distribution[key] += 1
     return distribution
+
 def calculate_avg_box_proportion(box_proportions):
     all_props = [p for plist in box_proportions for p in plist]
     return round(mean(all_props), 4) if all_props else 0
+
 def calculate_box_proportion_distribution(box_proportions):
     all_props = [p for plist in box_proportions for p in plist]
     dist = {f"{i/10:.1f}-{(i+1)/10:.1f}": 0 for i in range(10)}
@@ -172,10 +188,13 @@ def calculate_box_proportion_distribution(box_proportions):
         index = min(int(prop*10), 9)
         dist[list(dist.keys())[index]] += 1
     return dist
+
 def calculate_avg_preprocess_time(pre_times):
     return round(mean(pre_times), 2) if pre_times else 0
+
 def calculate_avg_postprocess_time(post_times):
     return round(mean(post_times), 2) if post_times else 0
+
 def calculate_preprocess_time_distribution(preprocess_times):
     preprocess_dist = {}
     if preprocess_times:
@@ -191,6 +210,7 @@ def calculate_preprocess_time_distribution(preprocess_times):
             key = list(preprocess_dist.keys())[index]
             preprocess_dist[key] += 1
     return preprocess_dist
+
 def calculate_postprocess_time_distribution(postprocess_times):
     postprocess_dist = {}
     if postprocess_times:
@@ -206,6 +226,7 @@ def calculate_postprocess_time_distribution(postprocess_times):
             key = list(postprocess_dist.keys())[index]
             postprocess_dist[key] += 1
     return postprocess_dist
+    
 def send_results_to_server(image_url, labels, confs,batch_id):
     """Send image data and results to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:

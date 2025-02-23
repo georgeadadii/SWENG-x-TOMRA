@@ -29,7 +29,7 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
             session.run(
                     """MERGE (i:Image {image_url: $image_url})
                     MERGE (b:BatchNode {batch_id: $batch_id})
-                    CREATE (i)-[:BELONGS_TO]->(b)
+                    MERGE (i)-[:BELONGS_TO]->(b)
                 """,
                 image_url=request.image_url,
                 batch_id=request.batch_id

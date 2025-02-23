@@ -6,23 +6,10 @@ import uuid
 import json
 from collections import Counter
 import metrics
-
-if os.getenv("CI") != "true":
-    from ultralytics import YOLO
-else:
-    class YOLO:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def predict(self, *args, **kwargs):
-            return "Mocked prediction for CI"
-
+import torch
+from torch.quantization import quantize_dynamic
+from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
-
-# def load_image_data(image_path):
-#     """Load image data from a file as bytes."""
-#     with open(image_path, "rb") as f:
-#         return f.read()
 
 AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
 CONTAINER_NAME = "sweng25group06cont"
@@ -38,11 +25,23 @@ def upload_to_azure(image_path):
     image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{os.path.basename(image_path)}"
     print(image_url)
 
-    return image_url  
+    return image_url 
 
-def process_image(image_path):
+def quantize_model(model):
+    """Quantize the YOLO model for lower energy consumption."""
+    print("Quantizing model...")
+    # Quantize the model dynamically (weights only)
+    quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+    return quantized_model 
+
+def process_image(image_path, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
     model = YOLO("yolo11n.pt")
+
+    # Quantize the model if requested
+    if quantize:
+        model.model = quantize_model(model.model)
+
     preprocess_times = []
     inference_times = []
     postprocess_times = []
@@ -114,7 +113,7 @@ def send_metrics_to_server(metrics, batch_id):
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
 
-def run():
+def run(quantize=False):
     try:
         # Path to the folder containing unprocessed images
         unprocessed_folder_path = "unprocessed_images"
@@ -148,7 +147,7 @@ def run():
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape = process_image(image_path)
+            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape = process_image(image_path, quantize)
 
             data['image_names'].append(image_name)
             data['pre_times'].extend(pre_times)
@@ -194,4 +193,11 @@ def run():
         print(f"Client error: {e}")
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    # Add command-line argument for quantization
+    parser = argparse.ArgumentParser(description="Run the model client with optional quantization.")
+    parser.add_argument("--quantize", action="store_true", help="Quantize the model for lower energy consumption.")
+    args = parser.parse_args()
+
+    run(quantize=args.quantize)

@@ -3,6 +3,11 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pytest
 from unittest.mock import patch, MagicMock
+
+sys.modules["torch"] = MagicMock()
+sys.modules["torchvision"] = MagicMock()
+sys.modules["ultralytics"] = MagicMock()
+
 from model_client import upload_to_azure, process_image, send_results_to_server
 
 # Mocking the Azure BlobServiceClient and YOLO model

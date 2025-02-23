@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 sys.modules["torch"] = MagicMock()
 sys.modules["torchvision"] = MagicMock()
 sys.modules["ultralytics"] = MagicMock()
+sys.modules["torch.quantization"] = MagicMock()
 
 from model_client import upload_to_azure, process_image, send_results_to_server
 

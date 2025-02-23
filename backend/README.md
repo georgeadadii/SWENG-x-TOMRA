@@ -24,6 +24,18 @@
 
     Some images for the model_service are already provided in \unprocessed_images\
 
+## Model Quantization for Green Computing
+
+Quantization reduces the precision of the model's weights from 32-bit floating point to 8-bit integers. This can significantly reduce memory usage, computational requirements, and energy consumption.
+
+### How to Enable Quantization
+
+To enable quantization, run `model_client.py` with the `--quantize` flag:
+
+```bash
+python model_client.py --quantize
+```
+
 ## GraphQL Queries
 
     Go to http://localhost:8000/graphql

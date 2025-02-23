@@ -21,24 +21,24 @@ message MetricsRequest {
   int32 total_images = 1;
   float total_time = 2;
   float average_confidence_score = 3;
-  map<string, float> average_confidence_for_labels = 4;
-  map<string, int32> confidence_distribution = 5;
-  map<int32, int32> detection_count_distribution = 6;
-  map<string, int32> category_distribution = 7;
-  map<string, float> category_percentages = 8;
+  string average_confidence_for_labels = 4;
+  string confidence_distribution = 5;
+  string detection_count_distribution = 6;
+  string category_distribution = 7;
+  string category_percentages = 8;
   float total_preprocessing_time = 9;
   float total_inference_time = 10;
   float total_postprocessing_time = 11;
   float average_inference_time = 12;
-  map<string, int32> inference_time_distribution = 13;
+  string inference_time_distribution = 13;
   float average_box_size = 14;
-  map<string, int32> box_size_distribution = 15;
+  string box_size_distribution = 15;
   float average_box_proportion = 16;
-  map<string, int32> box_proportion_distribution = 17;
+  string box_proportion_distribution = 17;
   float average_preprocess_time = 18;
   float average_postprocess_time = 19;
-  map<string, int32> preprocess_time_distribution = 20;
-  map<string, int32> postprocess_time_distribution = 21;
+  string preprocess_time_distribution = 20;
+  string postprocess_time_distribution = 21;
   string batch_id = 22;
 }
 

@@ -24,33 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13neo4j_service.proto\"d\n\x14\x43lassificationResult\x12\x13\n\x0b\x63lass_label\x18\x01 \x01(\t\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x11\n\timage_url\x18\x03 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\"&\n\x13StoreResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"$\n\x0f\x46\x65\x65\x64\x62\x61\x63kRequest\x12\x11\n\tresult_id\x18\x01 \x01(\t\"$\n\x10\x46\x65\x65\x64\x62\x61\x63kResponse\x12\x10\n\x08\x66\x65\x65\x64\x62\x61\x63k\x18\x01 \x01(\t\"\x9a\x0e\n\rMetricsResult\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12U\n\x1d\x61verage_confidence_for_labels\x18\x04 \x03(\x0b\x32..MetricsResult.AverageConfidenceForLabelsEntry\x12K\n\x17\x63onfidence_distribution\x18\x05 \x03(\x0b\x32*.MetricsResult.ConfidenceDistributionEntry\x12T\n\x1c\x64\x65tection_count_distribution\x18\x06 \x03(\x0b\x32..MetricsResult.DetectionCountDistributionEntry\x12G\n\x15\x63\x61tegory_distribution\x18\x07 \x03(\x0b\x32(.MetricsResult.CategoryDistributionEntry\x12\x45\n\x14\x63\x61tegory_percentages\x18\x08 \x03(\x0b\x32\'.MetricsResult.CategoryPercentagesEntry\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12R\n\x1binference_time_distribution\x18\r \x03(\x0b\x32-.MetricsResult.InferenceTimeDistributionEntry\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x46\n\x15\x62ox_size_distribution\x18\x0f \x03(\x0b\x32\'.MetricsResult.BoxSizeDistributionEntry\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12R\n\x1b\x62ox_proportion_distribution\x18\x11 \x03(\x0b\x32-.MetricsResult.BoxProportionDistributionEntry\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12T\n\x1cpreprocess_time_distribution\x18\x14 \x03(\x0b\x32..MetricsResult.PreprocessTimeDistributionEntry\x12V\n\x1dpostprocess_time_distribution\x18\x15 \x03(\x0b\x32/.MetricsResult.PostprocessTimeDistributionEntry\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t\x1a\x41\n\x1f\x41verageConfidenceForLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a=\n\x1b\x43onfidenceDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x41\n\x1f\x44\x65tectionCountDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a;\n\x19\x43\x61tegoryDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a:\n\x18\x43\x61tegoryPercentagesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02:\x02\x38\x01\x1a@\n\x1eInferenceTimeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a:\n\x18\x42oxSizeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a@\n\x1e\x42oxProportionDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x41\n\x1fPreprocessTimeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a\x42\n PostprocessTimeDistributionEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x32\xb4\x01\n\x0cNeo4jService\x12:\n\x0bStoreResult\x12\x15.ClassificationResult\x1a\x14.StoreResultResponse\x12\x34\n\x0cStoreMetrics\x12\x0e.MetricsResult\x1a\x14.StoreResultResponse\x12\x32\n\x0bGetFeedback\x12\x10.FeedbackRequest\x1a\x11.FeedbackResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13neo4j_service.proto\"d\n\x14\x43lassificationResult\x12\x13\n\x0b\x63lass_label\x18\x01 \x01(\t\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x11\n\timage_url\x18\x03 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\"&\n\x13StoreResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"$\n\x0f\x46\x65\x65\x64\x62\x61\x63kRequest\x12\x11\n\tresult_id\x18\x01 \x01(\t\"$\n\x10\x46\x65\x65\x64\x62\x61\x63kResponse\x12\x10\n\x08\x66\x65\x65\x64\x62\x61\x63k\x18\x01 \x01(\t\"\xce\x05\n\rMetricsResult\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12%\n\x1d\x61verage_confidence_for_labels\x18\x04 \x01(\t\x12\x1f\n\x17\x63onfidence_distribution\x18\x05 \x01(\t\x12$\n\x1c\x64\x65tection_count_distribution\x18\x06 \x01(\t\x12\x1d\n\x15\x63\x61tegory_distribution\x18\x07 \x01(\t\x12\x1c\n\x14\x63\x61tegory_percentages\x18\x08 \x01(\t\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12#\n\x1binference_time_distribution\x18\r \x01(\t\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x1d\n\x15\x62ox_size_distribution\x18\x0f \x01(\t\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12#\n\x1b\x62ox_proportion_distribution\x18\x11 \x01(\t\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12$\n\x1cpreprocess_time_distribution\x18\x14 \x01(\t\x12%\n\x1dpostprocess_time_distribution\x18\x15 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t2\xb4\x01\n\x0cNeo4jService\x12:\n\x0bStoreResult\x12\x15.ClassificationResult\x1a\x14.StoreResultResponse\x12\x34\n\x0cStoreMetrics\x12\x0e.MetricsResult\x1a\x14.StoreResultResponse\x12\x32\n\x0bGetFeedback\x12\x10.FeedbackRequest\x1a\x11.FeedbackResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'neo4j_service_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_METRICSRESULT_AVERAGECONFIDENCEFORLABELSENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_CONFIDENCEDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_CONFIDENCEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_DETECTIONCOUNTDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_CATEGORYDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_CATEGORYDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_CATEGORYPERCENTAGESENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_CATEGORYPERCENTAGESENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_INFERENCETIMEDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_BOXSIZEDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_BOXSIZEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_BOXPROPORTIONDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_PREPROCESSTIMEDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_PREPROCESSTIMEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
-  _globals['_METRICSRESULT_POSTPROCESSTIMEDISTRIBUTIONENTRY']._loaded_options = None
-  _globals['_METRICSRESULT_POSTPROCESSTIMEDISTRIBUTIONENTRY']._serialized_options = b'8\001'
   _globals['_CLASSIFICATIONRESULT']._serialized_start=23
   _globals['_CLASSIFICATIONRESULT']._serialized_end=123
   _globals['_STORERESULTRESPONSE']._serialized_start=125
@@ -60,27 +40,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_FEEDBACKRESPONSE']._serialized_start=203
   _globals['_FEEDBACKRESPONSE']._serialized_end=239
   _globals['_METRICSRESULT']._serialized_start=242
-  _globals['_METRICSRESULT']._serialized_end=2060
-  _globals['_METRICSRESULT_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_start=1417
-  _globals['_METRICSRESULT_AVERAGECONFIDENCEFORLABELSENTRY']._serialized_end=1482
-  _globals['_METRICSRESULT_CONFIDENCEDISTRIBUTIONENTRY']._serialized_start=1484
-  _globals['_METRICSRESULT_CONFIDENCEDISTRIBUTIONENTRY']._serialized_end=1545
-  _globals['_METRICSRESULT_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_start=1547
-  _globals['_METRICSRESULT_DETECTIONCOUNTDISTRIBUTIONENTRY']._serialized_end=1612
-  _globals['_METRICSRESULT_CATEGORYDISTRIBUTIONENTRY']._serialized_start=1614
-  _globals['_METRICSRESULT_CATEGORYDISTRIBUTIONENTRY']._serialized_end=1673
-  _globals['_METRICSRESULT_CATEGORYPERCENTAGESENTRY']._serialized_start=1675
-  _globals['_METRICSRESULT_CATEGORYPERCENTAGESENTRY']._serialized_end=1733
-  _globals['_METRICSRESULT_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_start=1735
-  _globals['_METRICSRESULT_INFERENCETIMEDISTRIBUTIONENTRY']._serialized_end=1799
-  _globals['_METRICSRESULT_BOXSIZEDISTRIBUTIONENTRY']._serialized_start=1801
-  _globals['_METRICSRESULT_BOXSIZEDISTRIBUTIONENTRY']._serialized_end=1859
-  _globals['_METRICSRESULT_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_start=1861
-  _globals['_METRICSRESULT_BOXPROPORTIONDISTRIBUTIONENTRY']._serialized_end=1925
-  _globals['_METRICSRESULT_PREPROCESSTIMEDISTRIBUTIONENTRY']._serialized_start=1927
-  _globals['_METRICSRESULT_PREPROCESSTIMEDISTRIBUTIONENTRY']._serialized_end=1992
-  _globals['_METRICSRESULT_POSTPROCESSTIMEDISTRIBUTIONENTRY']._serialized_start=1994
-  _globals['_METRICSRESULT_POSTPROCESSTIMEDISTRIBUTIONENTRY']._serialized_end=2060
-  _globals['_NEO4JSERVICE']._serialized_start=2063
-  _globals['_NEO4JSERVICE']._serialized_end=2243
+  _globals['_METRICSRESULT']._serialized_end=960
+  _globals['_NEO4JSERVICE']._serialized_start=963
+  _globals['_NEO4JSERVICE']._serialized_end=1143
 # @@protoc_insertion_point(module_scope)

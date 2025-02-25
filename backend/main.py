@@ -1,9 +1,25 @@
-from typing import List
+from typing import List, Dict, Any
 from fastapi import FastAPI
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
+import json
+
+# Define a custom scalar for JSON data
+@strawberry.scalar
+class JSONScalar:
+    @staticmethod
+    def serialize(value: Dict[str, Any]) -> str:
+        return json.dumps(value)
+
+    @staticmethod
+    def parse_value(value: str) -> Dict[str, Any]:
+        return json.loads(value)
+
+    @staticmethod
+    def parse_literal(ast) -> Dict[str, Any]:
+        return json.loads(ast.value)
 
 # Define a GraphQL type that matches Neo4j data with additional image_url field
 @strawberry.type

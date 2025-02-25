@@ -1,5 +1,7 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
@@ -9,7 +11,7 @@ type ChartData = {
   confidence: number;
 };
 
-const BarChartComponent: React.FC = () => {
+const ClassConfidence: React.FC = () => {
   const [results, setResults] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,8 @@ const BarChartComponent: React.FC = () => {
         // Convert grouped object to array with averages
         const averagedData = Object.values(aggregatedData).map((group) => ({
           classLabel: group.classLabel,
-          confidence: group.totalConfidence / group.count, // Calculate average
+          // Calculate average to 2 decimal places
+          confidence: parseFloat((group.totalConfidence / group.count).toFixed(2)), 
         }));
     
         setResults(averagedData);
@@ -74,23 +77,30 @@ const BarChartComponent: React.FC = () => {
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-md w-full h-[400px]">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        Average Confidence of Images Classified with Different Labels
-      </h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={results} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="classLabel" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="confidence" fill="#8884d8" radius={[10, 10, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Class Confidence</CardTitle>
+        <CardDescription>Averages of confidence scores for different labels</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={results}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="classLabel" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="confidence" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-export default BarChartComponent;
+export default ClassConfidence;
 

@@ -1,17 +1,18 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
-type BoxData = {
-  range: string;
-  count: number;
-};
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-export default function InferenceTimeMetrics() {
-  const [averageTime, setAverageTime] = useState<number | null>(null);
-  const [distribution, setDistribution] = useState<BoxData[]>([]);
+export default function InferenceTimeBar() {
+  const [timeData, setTimeData] = useState([
+    { name: "Total Time", value: 0 },
+    { name: "Inference Time", value: 0 },
+    { name: "Preprocessing Time", value: 0 },
+    { name: "Postprocessing Time", value: 0 },
+  ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +26,10 @@ export default function InferenceTimeMetrics() {
             query: `
             query {
               metrics {
-                averageInferenceTime
-                inferenceTimeDistribution
+                totalInferenceTime
+                totalPostprocessingTime
+                totalPreprocessingTime
+                totalTime
               }
             }
           `,
@@ -41,17 +44,15 @@ export default function InferenceTimeMetrics() {
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
+
         const data = result.data.metrics[0];
 
-        const dist = JSON.parse(data.inferenceTimeDistribution || "{}");
-
-        const formattedDist = Object.entries(dist).map(([range, count]) => ({
-          range: range as string,
-          count: count as number,
-        }));
-
-        setDistribution(formattedDist);
-        setAverageTime(data.averageInferenceTime);
+        setTimeData([
+          { name: "Total Time", value: data.totalTime },
+          { name: "Inference Time", value: data.totalInferenceTime },
+          { name: "Preprocessing Time", value: data.totalPreprocessingTime },
+          { name: "Postprocessing Time", value: data.totalPostprocessingTime },
+        ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -66,31 +67,34 @@ export default function InferenceTimeMetrics() {
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
 
   return (
-    <Card>
+    <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle>Inference Time Metrics</CardTitle>
-        <CardDescription>Distribution of inference times (ms)</CardDescription>
+        <CardTitle>Time Performance Metrics</CardTitle>
+        <CardDescription>
+          Total inference time, postprocessing time, preprocessing time, and total time (ms)
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium">Average Inference Time</p>
-            <p className="text-2xl font-bold">{averageTime?.toFixed(2)} ms</p>
-          </div>
-          <div className="h-[200px]">
+          <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={distribution}>
+              <BarChart data={timeData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" tickFormatter={(value: string) => value.split("-")[0]} />
-                <YAxis />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={120}/>
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" />
-              </LineChart>
+                <Bar dataKey="value">
+                  {timeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </CardContent>
     </Card>
+
   );
 }
 

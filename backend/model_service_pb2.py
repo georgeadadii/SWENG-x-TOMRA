@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_service.proto\"`\n\x0eResultsRequest\x12\x11\n\timage_url\x18\x01 \x01(\t\x12\x14\n\x0c\x63lass_labels\x18\x02 \x03(\t\x12\x13\n\x0b\x63onfidences\x18\x03 \x03(\x02\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\"3\n\x0fResultsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\xcf\x05\n\x0eMetricsRequest\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12%\n\x1d\x61verage_confidence_for_labels\x18\x04 \x01(\t\x12\x1f\n\x17\x63onfidence_distribution\x18\x05 \x01(\t\x12$\n\x1c\x64\x65tection_count_distribution\x18\x06 \x01(\t\x12\x1d\n\x15\x63\x61tegory_distribution\x18\x07 \x01(\t\x12\x1c\n\x14\x63\x61tegory_percentages\x18\x08 \x01(\t\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12#\n\x1binference_time_distribution\x18\r \x01(\t\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x1d\n\x15\x62ox_size_distribution\x18\x0f \x01(\t\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12#\n\x1b\x62ox_proportion_distribution\x18\x11 \x01(\t\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12$\n\x1cpreprocess_time_distribution\x18\x14 \x01(\t\x12%\n\x1dpostprocess_time_distribution\x18\x15 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t\"3\n\x0fMetricsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2t\n\x0cModelService\x12\x31\n\x0cStoreResults\x12\x0f.ResultsRequest\x1a\x10.ResultsResponse\x12\x31\n\x0cStoreMetrics\x12\x0f.MetricsRequest\x1a\x10.MetricsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_service.proto\"s\n\x0eResultsRequest\x12\x11\n\timage_url\x18\x01 \x01(\t\x12\x14\n\x0c\x63lass_labels\x18\x02 \x03(\t\x12\x13\n\x0b\x63onfidences\x18\x03 \x03(\x02\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\x12\x11\n\ttask_type\x18\x05 \x01(\t\"3\n\x0fResultsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\xcf\x05\n\x0eMetricsRequest\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12%\n\x1d\x61verage_confidence_for_labels\x18\x04 \x01(\t\x12\x1f\n\x17\x63onfidence_distribution\x18\x05 \x01(\t\x12$\n\x1c\x64\x65tection_count_distribution\x18\x06 \x01(\t\x12\x1d\n\x15\x63\x61tegory_distribution\x18\x07 \x01(\t\x12\x1c\n\x14\x63\x61tegory_percentages\x18\x08 \x01(\t\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12#\n\x1binference_time_distribution\x18\r \x01(\t\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x1d\n\x15\x62ox_size_distribution\x18\x0f \x01(\t\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12#\n\x1b\x62ox_proportion_distribution\x18\x11 \x01(\t\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12$\n\x1cpreprocess_time_distribution\x18\x14 \x01(\t\x12%\n\x1dpostprocess_time_distribution\x18\x15 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t\"3\n\x0fMetricsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2t\n\x0cModelService\x12\x31\n\x0cStoreResults\x12\x0f.ResultsRequest\x1a\x10.ResultsResponse\x12\x31\n\x0cStoreMetrics\x12\x0f.MetricsRequest\x1a\x10.MetricsResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,13 +32,13 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'model_service_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_RESULTSREQUEST']._serialized_start=23
-  _globals['_RESULTSREQUEST']._serialized_end=119
-  _globals['_RESULTSRESPONSE']._serialized_start=121
-  _globals['_RESULTSRESPONSE']._serialized_end=172
-  _globals['_METRICSREQUEST']._serialized_start=175
-  _globals['_METRICSREQUEST']._serialized_end=894
-  _globals['_METRICSRESPONSE']._serialized_start=896
-  _globals['_METRICSRESPONSE']._serialized_end=947
-  _globals['_MODELSERVICE']._serialized_start=949
-  _globals['_MODELSERVICE']._serialized_end=1065
+  _globals['_RESULTSREQUEST']._serialized_end=138
+  _globals['_RESULTSRESPONSE']._serialized_start=140
+  _globals['_RESULTSRESPONSE']._serialized_end=191
+  _globals['_METRICSREQUEST']._serialized_start=194
+  _globals['_METRICSREQUEST']._serialized_end=913
+  _globals['_METRICSRESPONSE']._serialized_start=915
+  _globals['_METRICSRESPONSE']._serialized_end=966
+  _globals['_MODELSERVICE']._serialized_start=968
+  _globals['_MODELSERVICE']._serialized_end=1084
 # @@protoc_insertion_point(module_scope)

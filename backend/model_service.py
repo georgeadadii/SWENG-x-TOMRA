@@ -40,7 +40,8 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                     class_label=label,
                     confidence=confidence,
                     image_url=image_url,
-                    batch_id=request.batch_id
+                    batch_id=request.batch_id,
+                    task_type=request.task_type
                 )
                 neo4j_response = self.neo4j_stub.StoreResult(neo4j_request)
                 print("Neo4j StoreResult response:", neo4j_response.success)

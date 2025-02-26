@@ -10,6 +10,7 @@ message ResultsRequest {
   repeated string class_labels = 2;
   repeated float confidences = 3;
   string batch_id = 4;
+  string task_type = 5;
 }
 
 message ResultsResponse {

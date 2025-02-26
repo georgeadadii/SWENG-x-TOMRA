@@ -14,6 +14,14 @@ from azure.storage.blob import BlobServiceClient
 AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
 CONTAINER_NAME = "sweng25group06cont"
 
+class YOLOv11:
+    def __init__(self, model_path):
+        self.model = YOLO(model_path)
+        self.task_type = "object_detection" 
+
+    def get_task_type(self):
+        return self.task_type
+
 def upload_to_azure(image_path):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
     blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=os.path.basename(image_path))
@@ -34,10 +42,9 @@ def quantize_model(model):
     quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
     return quantized_model 
 
-def process_image(image_path, quantize=False):
+def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
-    model = YOLO("yolo11n.pt")
-
+    
     # Quantize the model if requested
     if quantize:
         model.model = quantize_model(model.model)
@@ -46,7 +53,7 @@ def process_image(image_path, quantize=False):
     inference_times = []
     postprocess_times = []
 
-    results = model(image_path, verbose=False)
+    results = model.model(image_path, verbose=False)
     boxes = results[0].boxes
     speed_info = results[0].speed
     orig_shape = results[0].orig_shape
@@ -66,10 +73,9 @@ def process_image(image_path, quantize=False):
         box_area = (x2 - x1) * (y2 - y1)
         proportion = box_area / (width * height)
         box_proportions.append(round(proportion, 4))
+    return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
 
-    return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape
-
-def send_results_to_server(image_url, labels, confs,batch_id):
+def send_results_to_server(image_url, labels, confs, batch_id, task_type):
     """Send image data and results to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
@@ -77,7 +83,8 @@ def send_results_to_server(image_url, labels, confs,batch_id):
             image_url=image_url,
             class_labels=labels,
             confidences=confs,
-            batch_id=batch_id
+            batch_id=batch_id,
+            task_type=task_type
         )
         response = stub.StoreResults(request)
         print(f"Server response: {response.message}")
@@ -115,6 +122,9 @@ def send_metrics_to_server(metrics, batch_id):
 
 def run(quantize=False):
     try:
+        # Initialize the model
+        model = YOLOv11("yolo11n.pt")  
+
         # Path to the folder containing unprocessed images
         unprocessed_folder_path = "unprocessed_images"
         image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
@@ -147,7 +157,7 @@ def run(quantize=False):
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape = process_image(image_path, quantize)
+            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type  = process_image(image_path, model, quantize)
 
             data['image_names'].append(image_name)
             data['pre_times'].extend(pre_times)
@@ -161,7 +171,7 @@ def run(quantize=False):
             data['box_props'].append(proportions)
             data['orig_shapes'].append(orig_shape)
 
-            send_results_to_server(image_url, labels, confs,batch_id)
+            send_results_to_server(image_url, labels, confs, batch_id, task_type)
 
         stats = {
             "Total images": metrics.calculate_total_images(data['image_names']),

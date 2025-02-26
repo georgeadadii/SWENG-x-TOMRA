@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13neo4j_service.proto\"d\n\x14\x43lassificationResult\x12\x13\n\x0b\x63lass_label\x18\x01 \x01(\t\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x11\n\timage_url\x18\x03 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\"&\n\x13StoreResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"$\n\x0f\x46\x65\x65\x64\x62\x61\x63kRequest\x12\x11\n\tresult_id\x18\x01 \x01(\t\"$\n\x10\x46\x65\x65\x64\x62\x61\x63kResponse\x12\x10\n\x08\x66\x65\x65\x64\x62\x61\x63k\x18\x01 \x01(\t\"\xce\x05\n\rMetricsResult\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12%\n\x1d\x61verage_confidence_for_labels\x18\x04 \x01(\t\x12\x1f\n\x17\x63onfidence_distribution\x18\x05 \x01(\t\x12$\n\x1c\x64\x65tection_count_distribution\x18\x06 \x01(\t\x12\x1d\n\x15\x63\x61tegory_distribution\x18\x07 \x01(\t\x12\x1c\n\x14\x63\x61tegory_percentages\x18\x08 \x01(\t\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12#\n\x1binference_time_distribution\x18\r \x01(\t\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x1d\n\x15\x62ox_size_distribution\x18\x0f \x01(\t\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12#\n\x1b\x62ox_proportion_distribution\x18\x11 \x01(\t\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12$\n\x1cpreprocess_time_distribution\x18\x14 \x01(\t\x12%\n\x1dpostprocess_time_distribution\x18\x15 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t2\xb4\x01\n\x0cNeo4jService\x12:\n\x0bStoreResult\x12\x15.ClassificationResult\x1a\x14.StoreResultResponse\x12\x34\n\x0cStoreMetrics\x12\x0e.MetricsResult\x1a\x14.StoreResultResponse\x12\x32\n\x0bGetFeedback\x12\x10.FeedbackRequest\x1a\x11.FeedbackResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13neo4j_service.proto\"w\n\x14\x43lassificationResult\x12\x13\n\x0b\x63lass_label\x18\x01 \x01(\t\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x11\n\timage_url\x18\x03 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x04 \x01(\t\x12\x11\n\ttask_type\x18\x05 \x01(\t\"&\n\x13StoreResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"$\n\x0f\x46\x65\x65\x64\x62\x61\x63kRequest\x12\x11\n\tresult_id\x18\x01 \x01(\t\"$\n\x10\x46\x65\x65\x64\x62\x61\x63kResponse\x12\x10\n\x08\x66\x65\x65\x64\x62\x61\x63k\x18\x01 \x01(\t\"\xce\x05\n\rMetricsResult\x12\x14\n\x0ctotal_images\x18\x01 \x01(\x05\x12\x12\n\ntotal_time\x18\x02 \x01(\x02\x12 \n\x18\x61verage_confidence_score\x18\x03 \x01(\x02\x12%\n\x1d\x61verage_confidence_for_labels\x18\x04 \x01(\t\x12\x1f\n\x17\x63onfidence_distribution\x18\x05 \x01(\t\x12$\n\x1c\x64\x65tection_count_distribution\x18\x06 \x01(\t\x12\x1d\n\x15\x63\x61tegory_distribution\x18\x07 \x01(\t\x12\x1c\n\x14\x63\x61tegory_percentages\x18\x08 \x01(\t\x12 \n\x18total_preprocessing_time\x18\t \x01(\x02\x12\x1c\n\x14total_inference_time\x18\n \x01(\x02\x12!\n\x19total_postprocessing_time\x18\x0b \x01(\x02\x12\x1e\n\x16\x61verage_inference_time\x18\x0c \x01(\x02\x12#\n\x1binference_time_distribution\x18\r \x01(\t\x12\x18\n\x10\x61verage_box_size\x18\x0e \x01(\x02\x12\x1d\n\x15\x62ox_size_distribution\x18\x0f \x01(\t\x12\x1e\n\x16\x61verage_box_proportion\x18\x10 \x01(\x02\x12#\n\x1b\x62ox_proportion_distribution\x18\x11 \x01(\t\x12\x1f\n\x17\x61verage_preprocess_time\x18\x12 \x01(\x02\x12 \n\x18\x61verage_postprocess_time\x18\x13 \x01(\x02\x12$\n\x1cpreprocess_time_distribution\x18\x14 \x01(\t\x12%\n\x1dpostprocess_time_distribution\x18\x15 \x01(\t\x12\x10\n\x08\x62\x61tch_id\x18\x16 \x01(\t2\xb4\x01\n\x0cNeo4jService\x12:\n\x0bStoreResult\x12\x15.ClassificationResult\x1a\x14.StoreResultResponse\x12\x34\n\x0cStoreMetrics\x12\x0e.MetricsResult\x1a\x14.StoreResultResponse\x12\x32\n\x0bGetFeedback\x12\x10.FeedbackRequest\x1a\x11.FeedbackResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,15 +32,15 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'neo4j_service_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_CLASSIFICATIONRESULT']._serialized_start=23
-  _globals['_CLASSIFICATIONRESULT']._serialized_end=123
-  _globals['_STORERESULTRESPONSE']._serialized_start=125
-  _globals['_STORERESULTRESPONSE']._serialized_end=163
-  _globals['_FEEDBACKREQUEST']._serialized_start=165
-  _globals['_FEEDBACKREQUEST']._serialized_end=201
-  _globals['_FEEDBACKRESPONSE']._serialized_start=203
-  _globals['_FEEDBACKRESPONSE']._serialized_end=239
-  _globals['_METRICSRESULT']._serialized_start=242
-  _globals['_METRICSRESULT']._serialized_end=960
-  _globals['_NEO4JSERVICE']._serialized_start=963
-  _globals['_NEO4JSERVICE']._serialized_end=1143
+  _globals['_CLASSIFICATIONRESULT']._serialized_end=142
+  _globals['_STORERESULTRESPONSE']._serialized_start=144
+  _globals['_STORERESULTRESPONSE']._serialized_end=182
+  _globals['_FEEDBACKREQUEST']._serialized_start=184
+  _globals['_FEEDBACKREQUEST']._serialized_end=220
+  _globals['_FEEDBACKRESPONSE']._serialized_start=222
+  _globals['_FEEDBACKRESPONSE']._serialized_end=258
+  _globals['_METRICSRESULT']._serialized_start=261
+  _globals['_METRICSRESULT']._serialized_end=979
+  _globals['_NEO4JSERVICE']._serialized_start=982
+  _globals['_NEO4JSERVICE']._serialized_end=1162
 # @@protoc_insertion_point(module_scope)

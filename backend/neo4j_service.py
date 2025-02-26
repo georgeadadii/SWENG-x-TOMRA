@@ -16,6 +16,7 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         print("Class Label:", request.class_label)
         print("Confidence:", request.confidence)
         print("URL:", request.image_url)
+        print("Task Type:", request.task_type)
 
         with self.driver.session() as session:
             session.run(
@@ -32,6 +33,27 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 """,
                 image_url=request.image_url,
                 batch_id=request.batch_id
+            )
+
+        # Create or match an Annotation node for the image
+        with self.driver.session() as session:
+            session.run(
+                """
+                MATCH (i:Image {image_url: $image_url})
+                MERGE (i)-[:HAS_ANNOTATION]->(a:Annotation {
+                    reviewed: $reviewed,
+                    classified: $classified,
+                    misclassified: $misclassified,
+                    task_type: $task_type
+                })
+                ON CREATE SET
+                    a.created_at = datetime()
+                """,
+                image_url=request.image_url,
+                classified=False,  
+                misclassified=False,  
+                task_type=request.task_type,  
+                reviewed=False  
             )
 
         # Store the result in Neo4j

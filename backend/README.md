@@ -24,6 +24,67 @@
 
     Some images for the model_service are already provided in \unprocessed_images\
 
+## Model Quantization for Green Computing
+
+Quantization reduces the precision of the model's weights from 32-bit floating point to 8-bit integers. This can significantly reduce memory usage, computational requirements, and energy consumption.
+
+### How to Enable Quantization
+
+To enable quantization, run `model_client.py` with the `--quantize` flag:
+
+```bash
+python model_client.py --quantize
+```
+
+## GraphQL Queries
+
+    Go to http://localhost:8000/graphql
+
+To query all metrics, use the following GraphQL query:
+
+```graphql
+query {
+  metrics {
+    metricId
+    averageConfidenceScore
+    averageInferenceTime
+    categoryDistribution
+    categoryPercentages
+    confidenceDistribution
+    detectionCountDistribution
+    inferenceTimeDistribution
+    labelAvgConfidences
+    detectionCountDistribution
+    totalImages
+    totalInferenceTime
+    totalPostprocessingTime
+    totalPreprocessingTime
+    totalTime
+    averageBoxSize
+    boxSizeDistribution
+    averageBoxProportion
+    boxProportionDistribution
+    averagePreprocessTime
+    averagePostprocessTime
+    preprocessTimeDistribution
+    postprocessTimeDistribution
+  }
+}
+```
+
+To query all results and their corresponding images, use the following GraphQL query:
+
+```graphql
+query {
+  results {
+    classLabel
+    confidence
+    imageUrl
+  }
+}
+```
+
+
 ## To view the database:
 
     Go to http://localhost:7474/browser/
@@ -31,6 +92,8 @@
     Log in with the following details:
         User: neo4j
         Password: password
+
+    Run the query "MATCH (n) RETURN (n)" to see all nodes in the database
 
     Run the query "MATCH (r:Result) RETURN r" to see all classification result nodes
 

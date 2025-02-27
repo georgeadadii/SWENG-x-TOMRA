@@ -4,25 +4,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
-type DetectionData = {
-  range: number;
+type BoxData = {
+  range: string;
   count: number;
 };
 
-/*const mockData = [
-  { range: "0-2", count: 15 },
-  { range: "3-5", count: 30 },
-  { range: "6-8", count: 25 },
-  { range: "9-11", count: 20 },
-  { range: "12+", count: 10 },
-]*/
-
-export default function DetectionMetrics() {
-  const [averageDetections, setAverageDetections] = useState<number | null>(null);
-  const [detectionDistribution, setDetectionDistribution] = useState<DetectionData[]>([]);
+export default function BoxProportionMetrics() {
+  const [averageBoxSize, setAverageBoxSize] = useState<number | null>(null);
+  const [distribution, setDistribution] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  //const averageDetections = 5.7
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -33,7 +25,8 @@ export default function DetectionMetrics() {
             query: `
             query {
               metrics {
-                detectionCountDistribution
+                averageBoxProportion
+                boxProportionDistribution
               }
             }
           `,
@@ -50,58 +43,53 @@ export default function DetectionMetrics() {
         }
         const data = result.data.metrics[0];
 
-        // parse detection distribution
-        const detectionDist = JSON.parse(data.detectionCountDistribution || "{}");
+        const dist = JSON.parse(data.boxProportionDistribution || "{}");
 
-        const formattedDist = Object.entries(detectionDist).map(([range, count]) => ({
-          range: range as unknown as number,
+        const formattedDist = Object.entries(dist).map(([range, count]) => ({
+          range: range as string,
           count: count as number,
         }));
 
-        setDetectionDistribution(formattedDist);
-
-        // compute average detection
-        const totalDetections = formattedDist.reduce((sum, { count }) => sum + count, 0);
-        const weightedSum = formattedDist.reduce((sum, { range, count }) => sum + range * count, 0);
-        const averageDetections = totalDetections ? weightedSum / totalDetections : 0;
-        setAverageDetections(averageDetections);
+        setDistribution(formattedDist);
+        setAverageBoxSize(data.averageBoxProportion);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
         setLoading(false);
       }
-      
     };
+
     fetchData();
   }, []);
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detection Metrics</CardTitle>
-        <CardDescription>Number of detections per image</CardDescription>
+        <CardTitle>Bounding Box Proportion Metrics</CardTitle>
+        <CardDescription>Proportion distribution of bounding boxes</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium">Average Detections per Image</p>
-            <p className="text-2xl font-bold">{averageDetections !== null ? averageDetections.toFixed(1) : "Loading..."}</p>
+            <p className="text-sm font-medium">Average Bounding Box Proportion</p>
+            <p className="text-2xl font-bold">{averageBoxSize?.toFixed(2)} px</p>
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={detectionDistribution}>
+              <BarChart data={distribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" />
+                <XAxis dataKey="range" tickFormatter={(value: string) => value.split("-")[0]} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#82ca9d" />
+                <Bar dataKey="count" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

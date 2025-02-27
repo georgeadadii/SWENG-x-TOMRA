@@ -3,7 +3,6 @@ from concurrent import futures
 import neo4j_service_pb2
 import neo4j_service_pb2_grpc
 from neo4j import GraphDatabase
-import json
 import uuid
 
 class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
@@ -17,12 +16,44 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         print("Class Label:", request.class_label)
         print("Confidence:", request.confidence)
         print("URL:", request.image_url)
+        print("Task Type:", request.task_type)
+
+        with self.driver.session() as session:
+            session.run(
+                "MERGE (b:BatchNode {batch_id: $batch_id})",
+                batch_id=request.batch_id
+            )
 
         # Create or match an image node
         with self.driver.session() as session:
             session.run(
-                "MERGE (i:Image {image_url: $image_url})",
-                image_url=request.image_url
+                    """MERGE (i:Image {image_url: $image_url})
+                    MERGE (b:BatchNode {batch_id: $batch_id})
+                    MERGE (i)-[:BELONGS_TO]->(b)
+                """,
+                image_url=request.image_url,
+                batch_id=request.batch_id
+            )
+
+        # Create or match an Annotation node for the image
+        with self.driver.session() as session:
+            session.run(
+                """
+                MATCH (i:Image {image_url: $image_url})
+                MERGE (i)-[:HAS_ANNOTATION]->(a:Annotation {
+                    reviewed: $reviewed,
+                    classified: $classified,
+                    misclassified: $misclassified,
+                    task_type: $task_type
+                })
+                ON CREATE SET
+                    a.created_at = datetime()
+                """,
+                image_url=request.image_url,
+                classified=False,  
+                misclassified=False,  
+                task_type=request.task_type,  
+                reviewed=False  
             )
 
         # Store the result in Neo4j
@@ -41,43 +72,17 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
         return neo4j_service_pb2.StoreResultResponse(success=True)
 
     def StoreMetrics(self, request, context):
-        # Log the received metrics data
-        print("Received StoreMetrics request:")
-
-        batch_id = str(uuid.uuid4())
         metric_id = str(uuid.uuid4())
+        batch_id = request.batch_id
 
-        confidence_distribution_dict = dict(request.confidence_distribution)
-        confidence_distribution_json = json.dumps(confidence_distribution_dict)
-        inference_time_distribution_dict = dict(request.inference_time_distribution)
-        inference_time_distribution_json = json.dumps(inference_time_distribution_dict)
-        label_avg_confidences_dict = dict(request.average_confidence_for_labels)
-        label_avg_confidences_json = json.dumps(label_avg_confidences_dict)
-        num_of_labels_detection_distribution_dict = dict(request.detection_count_distribution)
-        num_of_labels_detection_distribution_json = json.dumps(num_of_labels_detection_distribution_dict)
-        category_distribution_dict = dict(request.category_distribution)
-        category_distribution_json = json.dumps(category_distribution_dict)
-        category_percentages_dict = dict(request.category_percentages)
-        category_percentages_json = json.dumps(category_percentages_dict)
-
-        # Store the metrics in Neo4j
         with self.driver.session() as session:
-            # Create a BatchNode with batch_id
-            session.run(
-                """
-                CREATE (b:BatchNode {batch_id: $batch_id})
-                """,
-                batch_id=batch_id
-            )
-
-            # Create a node for the metrics
             session.run(
                 """
                 MATCH (b:BatchNode {batch_id: $batch_id})
                 CREATE (m:Metrics {
                     metric_id: $metric_id,
-                    total_images: $total_images, 
-                    total_time: $total_time, 
+                    total_images: $total_images,
+                    total_time: $total_time,
                     average_confidence_score: $average_confidence_score,
                     total_preprocessing_time: $total_preprocessing_time,
                     total_inference_time: $total_inference_time,
@@ -86,13 +91,20 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                     confidence_distribution: $confidence_distribution_json,
                     inference_time_distribution: $inference_time_distribution_json,
                     label_avg_confidences: $label_avg_confidences_json,
-                    num_of_labels_detection_distribution: $num_of_labels_detection_distribution_json,
+                    detection_count_distribution: $detection_count_distribution_json,
                     category_distribution: $category_distribution_json,
-                    category_percentages: $category_percentages_json
+                    category_percentages: $category_percentages_json,
+                    box_size_distribution: $box_size_distribution_json,
+                    average_box_size: $average_box_size,
+                    box_proportion_distribution: $box_proportion_distribution_json,
+                    average_box_proportion: $average_box_proportion,
+                    average_preprocess_time: $average_preprocess_time,
+                    average_postprocess_time: $average_postprocess_time,
+                    preprocess_time_distribution: $preprocess_distribution_json,
+                    postprocess_time_distribution: $postprocess_distribution_json
                 })
                 CREATE (m)-[:BELONGS_TO]->(b)
                 """,
-
                 batch_id=batch_id,
                 metric_id=metric_id,
                 total_images=request.total_images,
@@ -102,15 +114,21 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 total_inference_time=request.total_inference_time,
                 total_postprocessing_time=request.total_postprocessing_time,
                 average_inference_time=request.average_inference_time,
-                confidence_distribution_json=confidence_distribution_json,
-                inference_time_distribution_json=inference_time_distribution_json,
-                label_avg_confidences_json=label_avg_confidences_json,
-                num_of_labels_detection_distribution_json=num_of_labels_detection_distribution_json,
-                category_distribution_json=category_distribution_json,
-                category_percentages_json=category_percentages_json
-
+                confidence_distribution_json=request.confidence_distribution,
+                inference_time_distribution_json=request.inference_time_distribution,
+                label_avg_confidences_json=request.average_confidence_for_labels,
+                detection_count_distribution_json=request.detection_count_distribution,
+                category_distribution_json=request.category_distribution,
+                category_percentages_json=request.category_percentages,
+                box_size_distribution_json=request.box_size_distribution,
+                average_box_size=request.average_box_size,
+                box_proportion_distribution_json=request.box_proportion_distribution,
+                average_box_proportion=request.average_box_proportion,
+                average_preprocess_time=request.average_preprocess_time,
+                average_postprocess_time=request.average_postprocess_time,
+                preprocess_distribution_json=request.preprocess_time_distribution,
+                postprocess_distribution_json=request.postprocess_time_distribution,
             )
-
         return neo4j_service_pb2.StoreResultResponse(success=True)
 
 def serve():

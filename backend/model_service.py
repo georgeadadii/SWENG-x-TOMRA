@@ -8,6 +8,7 @@ import logging
 import os
 import requests
 
+
 class ModelService(model_service_pb2_grpc.ModelServiceServicer):
     def __init__(self):
         # Initialize the Neo4j Service client
@@ -36,9 +37,11 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
 
             for label, confidence in zip(request.class_labels, request.confidences):
                 neo4j_request = neo4j_service_pb2.ClassificationResult(
-                class_label=label,
-                confidence=confidence,
-                image_url=image_url
+                    class_label=label,
+                    confidence=confidence,
+                    image_url=image_url,
+                    batch_id=request.batch_id,
+                    task_type=request.task_type
                 )
                 neo4j_response = self.neo4j_stub.StoreResult(neo4j_request)
                 print("Neo4j StoreResult response:", neo4j_response.success)
@@ -67,12 +70,23 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 total_postprocessing_time=request.total_postprocessing_time,
                 average_inference_time=request.average_inference_time,
                 inference_time_distribution=request.inference_time_distribution,
+                average_box_size=request.average_box_size,
+                box_size_distribution=request.box_size_distribution,
+                average_box_proportion=request.average_box_proportion,
+                box_proportion_distribution=request.box_proportion_distribution,
+                average_preprocess_time=request.average_preprocess_time,
+                average_postprocess_time=request.average_postprocess_time,
+                preprocess_time_distribution=request.preprocess_time_distribution,
+                postprocess_time_distribution=request.postprocess_time_distribution,
+                batch_id=request.batch_id
             )
             neo4j_response = self.neo4j_stub.StoreMetrics(neo4j_metrics_request)
             print("Neo4j StoreMetrics response:", neo4j_response.success)
             return model_service_pb2.MetricsResponse(success=True, message="Metrics stored successfully in Neo4j")
         except Exception as e:
             return model_service_pb2.MetricsResponse(success=False, message=f"Error storing metrics: {str(e)}")
+
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     model_service_pb2_grpc.add_ModelServiceServicer_to_server(ModelService(), server)
@@ -80,6 +94,7 @@ def serve():
     print("Server started, listening on [::]:50051")
     server.start()
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     serve()

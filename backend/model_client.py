@@ -44,10 +44,6 @@ def quantize_model(model):
 
 def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
-    
-    # Quantize the model if requested
-    if quantize:
-        model.model = quantize_model(model.model)
 
     preprocess_times = []
     inference_times = []
@@ -124,6 +120,10 @@ def run(quantize=False):
     try:
         # Initialize the model
         model = YOLOv11("yolo11n.pt")  
+
+        # Quantize the model if requested
+        if quantize:
+            model.model = quantize_model(model.model)
 
         # Path to the folder containing unprocessed images
         unprocessed_folder_path = "unprocessed_images"

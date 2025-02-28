@@ -19,21 +19,34 @@ export default function ImageClassificationMetrics() {
         <TabsTrigger value="internal">Internal Metrics</TabsTrigger>
         <TabsTrigger value="feedback">Feedback-based Metrics</TabsTrigger>
       </TabsList>
+
       <TabsContent value="internal" className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <ConfidenceMetrics />
-          <DetectionMetrics />
-          <ClassDistribution />
-          <BoundingBoxMetrics />
-          <BoxProportionMetrics />
-          <ClassConfidence/>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-          <InferenceTimeMetrics />
-          <PreTimeMetrics />
-          <PostTimeMetrics />
-          <InferenceTimeBar />
-        </div>
+        <Tabs defaultValue="confidence" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="confidence">Classes and Confidence Metrics</TabsTrigger>
+            <TabsTrigger value="bounding">Bounding Box Metrics</TabsTrigger>
+            <TabsTrigger value="time">Time Metrics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="confidence" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <ConfidenceMetrics />
+            <ClassDistribution />
+            <ClassConfidence />
+          </TabsContent>
+
+          <TabsContent value="bounding" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <BoundingBoxMetrics />
+            <BoxProportionMetrics />
+            <DetectionMetrics />
+          </TabsContent>
+
+          <TabsContent value="time" className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <InferenceTimeMetrics />
+            <PreTimeMetrics />
+            <PostTimeMetrics />
+            <InferenceTimeBar />
+          </TabsContent>
+        </Tabs>
       </TabsContent>
       <TabsContent value="feedback" className="space-y-4">
         <AccuracyMetrics />

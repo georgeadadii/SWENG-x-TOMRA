@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { CalendarIcon, CheckCircle, ChevronDown, Filter, XCircle, Info } from "lucide-react"
+import { CalendarIcon, CheckCircle, CircleSlash, ChevronDown, Filter, XCircle, Info } from "lucide-react"
 
 import { Box } from "@/components/ui/box"
 import { Dropdown, DropdownItem } from "@/components/ui/dropdown"
@@ -18,32 +18,42 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
+const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
+
 type FilterOption = {
   value: string
   label: string
   icon?: React.ComponentType<{ className?: string }>
 }
 
+const batchFilters:FilterOption[] = [
+  { value: "batch1", label: "Batch 1" },
+  { value: "batch2", label: "Batch 2" },
+  { value: "batch3", label: "Batch 3" },
+]
+
 const dateFilters: FilterOption[] = [
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
   { value: "last7days", label: "Last 7 days" },
   { value: "last30days", label: "Last 30 days" },
-  { value: "custom", label: "Custom range" },
+  { value: "all", label: "Any date" },
 ]
 
 const statusFilters: FilterOption[] = [
   { value: "all", label: "All statuses" },
   { value: "correct", label: "Correct", icon: CheckCircle },
   { value: "misclassified", label: "Misclassified", icon: XCircle },
+  { value: "not classified", label: "Not classified", icon: CircleSlash },
 ]
 
-const confidenceFilters: FilterOption[] = [
+/*const confidenceFilters: FilterOption[] = [
   { value: "all", label: "All confidence levels" },
   { value: "high", label: "High confidence (>90%)" },
   { value: "medium", label: "Medium confidence (70-90%)" },
   { value: "low", label: "Low confidence (<70%)" },
-]
+]*/
+
 
 const labelOptions: Option[] = [
   { value: "person", label: "Person" },
@@ -58,7 +68,7 @@ const labelOptions: Option[] = [
 export function ImageClassificationFilter() {
   const [dateFilter, setDateFilter] = useState<FilterOption>(dateFilters[2])
   const [statusFilter, setStatusFilter] = useState<FilterOption>(statusFilters[0])
-  const [confidenceFilter, setConfidenceFilter] = useState<FilterOption>(confidenceFilters[0])
+  //const [confidenceFilter, setConfidenceFilter] = useState<FilterOption>(confidenceFilters[0])
   const [selectedLabels, setSelectedLabels] = useState<Option[]>([])
 
   return (
@@ -126,7 +136,7 @@ export function ImageClassificationFilter() {
           ))}
         </Dropdown>
 
-        <Dropdown
+        {/*<Dropdown
           trigger={
             <Box variant="outline" className="w-[200px] justify-between">
               <Filter className="mr-2 h-4 w-4" />
@@ -141,7 +151,7 @@ export function ImageClassificationFilter() {
               {filter.value === confidenceFilter.value && <CheckCircle className="ml-auto h-4 w-4 opacity-50" />}
             </DropdownItem>
           ))}
-        </Dropdown>
+        </Dropdown>*/}
 
         <div className="w-full sm:w-[300px]">
           <MultiSelect
@@ -155,7 +165,7 @@ export function ImageClassificationFilter() {
       </div>
 
       <div className="text-sm text-muted-foreground mb-6">
-        Showing results for: {dateFilter.label}, {statusFilter.label}, {confidenceFilter.label}
+        Showing results for: {dateFilter.label}, {statusFilter.label},
         {selectedLabels.length > 0 && <>, Labels: {selectedLabels.map((label) => label.label).join(", ")}</>}
       </div>
 

@@ -62,7 +62,7 @@ frontend_test:
       - frontend/node_modules/
 
 # Building
-build:
+backend_build:
   stage: build
   tags:
     - maven
@@ -78,3 +78,23 @@ build:
   cache:
     paths:
       - venv/
+
+frontend_build:
+  stage: build
+  tags:
+    - maven
+  image: node:16
+  script:
+    - cd frontend
+    - echo "Installing frontend dependencies..."
+    - npm install
+    - echo "Building the Next.js application..."
+    - npm run build &  
+    - sleep 5  
+    - echo "Starting the Next.js server..."
+    - npm run start &  
+    - sleep 5  
+    - echo "Build completed successfully."
+  artifacts:
+    paths:
+      - frontend/.next/

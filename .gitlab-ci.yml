@@ -33,7 +33,7 @@ setup:
       - venv/
 
 # Testing
-test:
+backend_test:
   stage: test
   tags:
     - maven
@@ -45,6 +45,21 @@ test:
   cache:
     paths:
       - venv/
+
+frontend_test:
+  stage: test
+  tags:
+    - maven
+  image: node:16
+  script:
+    - cd frontend
+    - echo "Installing frontend dependencies..."
+    - npm install
+    - echo "Running frontend tests..."
+    - npm run test -- --testPathPattern=src/tests
+  cache:
+    paths:
+      - frontend/node_modules/
 
 # Building
 build:

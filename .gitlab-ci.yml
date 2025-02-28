@@ -56,7 +56,7 @@ frontend_test:
     - echo "Installing frontend dependencies..."
     - npm install
     - echo "Running frontend tests..."
-    - npm run test -- --testPathPattern=src/__tests__
+    - npm run test -- --testPathPattern=src/tests
   cache:
     paths:
       - frontend/node_modules/

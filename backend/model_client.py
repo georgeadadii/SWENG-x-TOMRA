@@ -71,8 +71,10 @@ def process_image(image_path, model, quantize=False):
         box_proportions.append(round(proportion, 4))
     return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
 
-def send_results_to_server(image_url, labels, confs, batch_id, task_type):
+
+def send_results_to_server(image_url, labels, confs, bboxes, batch_id, task_type):
     """Send image data and results to the gRPC server."""
+    bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
         request = model_service_pb2.ResultsRequest(
@@ -80,7 +82,8 @@ def send_results_to_server(image_url, labels, confs, batch_id, task_type):
             class_labels=labels,
             confidences=confs,
             batch_id=batch_id,
-            task_type=task_type
+            task_type=task_type,
+            bbox_coordinates=bbox_coords
         )
         response = stub.StoreResults(request)
         print(f"Server response: {response.message}")
@@ -171,7 +174,7 @@ def run(quantize=False):
             data['box_props'].append(proportions)
             data['orig_shapes'].append(orig_shape)
 
-            send_results_to_server(image_url, labels, confs, batch_id, task_type)
+            send_results_to_server(image_url, labels, confs, bboxes, batch_id, task_type)
 
         stats = {
             "Total images": metrics.calculate_total_images(data['image_names']),

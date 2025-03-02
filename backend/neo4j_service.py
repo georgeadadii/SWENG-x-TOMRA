@@ -13,14 +13,13 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
     def StoreResult(self, request, context):
         x1, y1, x2, y2 = map(float, request.bbox_coordinates.split(','))
 
-        # 创建 BatchNode 节点
+        #Batch Node
         with self.driver.session() as session:
             session.run(
                 "MERGE (b:BatchNode {batch_id: $batch_id})",
                 batch_id=request.batch_id
             )
-
-        # 创建 Image 节点并指向 BatchNode
+        #Image Node
         with self.driver.session() as session:
             session.run(
                 """
@@ -31,28 +30,7 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 image_url=request.image_url,
                 batch_id=request.batch_id
             )
-
-        # 创建 BoundingBox 节点并与 Image 节点关联
-        with self.driver.session() as session:
-            session.run(
-                """
-                MATCH (i:Image {image_url: $image_url})
-                MERGE (bb:BoundingBox {
-                    x1: $x1,
-                    y1: $y1,
-                    x2: $x2,
-                    y2: $y2
-                })
-                MERGE (i)-[:HAS_BOUNDING_BOX]->(bb)
-                """,
-                image_url=request.image_url,
-                x1=x1,
-                y1=y1,
-                x2=x2,
-                y2=y2
-            )
-
-        # 创建 Annotation 节点并与 Image 节点关联
+        # anno
         with self.driver.session() as session:
             session.run(
                 """
@@ -72,48 +50,47 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 misclassified=False,
                 task_type=request.task_type
             )
+        #Bbox
+        if(request.task_type=="object_detection"):
+            with self.driver.session() as session:
+                session.run(
+                    """
+                    MATCH (i:Image {image_url: $image_url})
+                    MERGE (bb:BoundingBox {
+                        x1: $x1,
+                        y1: $y1,
+                        x2: $x2,
+                        y2: $y2,
+                        confidence: $confidence
+                    })
+                    MERGE (l:Label {name: $class_label})
+                    MERGE (i)-[:HAS_BOUNDING_BOX]->(bb)
+                    MERGE (bb)-[:HAS_LABEL]->(l)
+                    """,
+                    image_url=request.image_url,
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2,
+                    confidence=request.confidence,
+                    class_label=request.class_label
 
-        # 创建 ClassificationAnnotation 节点并与 Image 节点关联
-        with self.driver.session() as session:
-            session.run(
-                """
-                MATCH (i:Image {image_url: $image_url})
-                MERGE (ca:ClassificationAnnotation {
-                    confidence: $confidence
-                })
-                MERGE (i)-[:HAS_CLASSIFICATION]->(ca)
-                """,
-                image_url=request.image_url,
-                confidence=request.confidence
-            )
-
-        # 创建 Label 节点并与 ClassificationAnnotation 节点关联
-        with self.driver.session() as session:
-            session.run(
-                """
-                MATCH (ca:ClassificationAnnotation {confidence: $confidence})
-                MERGE (l:Label {name: $class_label})
-                MERGE (ca)-[:HAS_LABEL]->(l)
-                """,
-                confidence=request.confidence,
-                class_label=request.class_label
-            )
-
-        # 将 BoundingBox 节点与 Label 节点关联
-        with self.driver.session() as session:
-            session.run(
-                """
-                MATCH (bb:BoundingBox {x1: $x1, y1: $y1, x2: $x2, y2: $y2})
-                MATCH (l:Label {name: $class_label})
-                MERGE (bb)-[:HAS_LABEL]->(l)
-                """,
-                x1=x1,
-                y1=y1,
-                x2=x2,
-                y2=y2,
-                class_label=request.class_label
-            )
-
+                )
+        # Class. Anno.
+        if (request.task_type == "image_classification"):
+            with self.driver.session() as session:
+                session.run(
+                    """
+                    MATCH (i:Image {image_url: $image_url})
+                    MERGE (ca:ClassificationAnnotation {confidence: $confidence})
+                    MERGE (l:Label {name: $class_label})
+                    MERGE (i)-[:HAS_CLASSIFICATION]->(ca)
+                    MERGE (ca)-[:HAS_LABEL]->(l)
+                    """,
+                    image_url=request.image_url,
+                    confidence=request.confidence,
+                    class_label = request.class_label
+                )
         return neo4j_service_pb2.StoreResultResponse(success=True)
 
     def StoreMetrics(self, request, context):

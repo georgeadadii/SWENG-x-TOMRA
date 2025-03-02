@@ -76,7 +76,8 @@ export default function ImageSwiper() {
 
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-40">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
+          {/* <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div> */}
+          <div role="status" className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
         </div>
       )}
 
@@ -88,7 +89,9 @@ export default function ImageSwiper() {
           variant="outline"
           className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
         >
-          <ChevronLeft className="h-6 w-6" />
+          {/* <ChevronLeft className="h-6 w-6" /> */}
+          <ChevronLeft aria-label="chevron-left" className="h-6 w-6" />
+
         </Button>
 
         <div className="relative w-[300px] h-[400px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
@@ -141,7 +144,9 @@ export default function ImageSwiper() {
           variant="outline"
           className="ml-4 transition-all duration-300 ease-in-out hover:bg-green-50 hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]"
         >
-          <ChevronRight className="h-6 w-6" />
+          {/* <ChevronRight className="h-6 w-6" /> */}
+          <ChevronRight aria-label="chevron-right" className="h-6 w-6" />
+
         </Button>
       </div>
     </div>

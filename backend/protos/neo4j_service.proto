@@ -12,6 +12,7 @@ message ClassificationResult {
   string image_url = 3;
   string batch_id = 4;
   string task_type = 5;
+  string bbox_coordinates = 6;
 }
 
 message StoreResultResponse {

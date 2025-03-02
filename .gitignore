@@ -4,3 +4,5 @@ __pycache__/
 backend/venv
 received_image.*
 .DS_Store
+venv/
+**/venv/

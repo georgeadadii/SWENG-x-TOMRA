@@ -5,6 +5,7 @@ from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
 import json
+from keyvault_utils import get_secret
 
 # Define a custom scalar for JSON data
 @strawberry.scalar
@@ -55,9 +56,9 @@ class MetricsType:
     preprocess_time_distribution: str  
     postprocess_time_distribution: str  
 
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "password"
+NEO4J_URI = get_secret("NEO4J-URI")
+NEO4J_USER = get_secret("NEO4J-USER")
+NEO4J_PASSWORD = get_secret("NEO4J-PASSWORD")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 

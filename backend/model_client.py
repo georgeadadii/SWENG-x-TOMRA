@@ -10,9 +10,12 @@ import torch
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+from keyvault_utils import get_secret
 
-AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
-CONTAINER_NAME = "sweng25group06cont"
+AZURE_CONNECTION_STRING = get_secret("AZURE-STORAGE-CONNECTION-STRING")
+CONTAINER_NAME = get_secret("CONTAINER-NAME")
 
 class YOLOv11:
     def __init__(self, model_path):

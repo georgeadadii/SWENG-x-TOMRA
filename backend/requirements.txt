@@ -8,3 +8,6 @@ strawberry-graphql[debug-server]
 fastapi[all]
 torch
 torchvision
+azure
+azure-identity
+azure-keyvault

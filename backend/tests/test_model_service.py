@@ -32,7 +32,10 @@ def test_store_results(mock_get, model_service):
     request = ResultsRequest(
         image_url="https://youraccount.blob.core.windows.net/container/yourimage.jpg",
         class_labels=["label1", "label2"],
-        confidences=[0.9, 0.8]
+        confidences=[0.9, 0.8],
+        batch_id = "5432",
+        task_type = "object_detection",
+        bbox_coordinates=["0.2,0.2,0.2,0.2", "0.3,0.3,0.3,0.3"]
     )
 
     # Test storing results

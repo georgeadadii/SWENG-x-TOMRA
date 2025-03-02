@@ -49,8 +49,8 @@ export default function ImageClassificationMetrics() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Metrics Overview</TabsTrigger>
-            <TabsTrigger value="confidence">Classes and Confidence</TabsTrigger>
-            <TabsTrigger value="bounding">Bounding Box</TabsTrigger>
+            <TabsTrigger value="confidence">Confidence</TabsTrigger>
+            <TabsTrigger value="bounding">Detection</TabsTrigger>
             <TabsTrigger value="time">Time</TabsTrigger>
           </TabsList>
 

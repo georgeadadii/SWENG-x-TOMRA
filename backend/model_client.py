@@ -73,20 +73,33 @@ def process_image(image_path, model, quantize=False):
 
 
 def send_results_to_server(image_url, labels, confs, bboxes, batch_id, task_type):
-    """Send image data and results to the gRPC server."""
+    """Send a stream of image results to the gRPC server."""
     bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
+
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
-        request = model_service_pb2.ResultsRequest(
-            image_url=image_url,
-            class_labels=labels,
-            confidences=confs,
-            batch_id=batch_id,
-            task_type=task_type,
-            bbox_coordinates=bbox_coords
-        )
-        response = stub.StoreResults(request)
-        print(f"Server response: {response.message}")
+
+        def request_generator():
+            yield model_service_pb2.ResultsRequest(
+                image_url=image_url,
+                class_labels=labels,
+                confidences=confs,
+                batch_id=batch_id,
+                task_type=task_type,
+                bbox_coordinates=bbox_coords
+            )
+
+        try:
+            response_iterator = stub.StoreResults(request_generator())  # Send as a stream
+
+            for response in response_iterator:  # Iterate over streaming responses
+                print(f"Server response: {response}")
+
+        except grpc.RpcError as e:
+            print(f"gRPC Error: {e.code()} - {e.details()}")
+
+        except Exception as e:
+            print(f"Unexpected error while sending results: {str(e)}")
 
 def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
@@ -203,8 +216,9 @@ def run(quantize=False):
         send_metrics_to_server(stats, batch_id)
 
     except Exception as e:
-        print(f"Client error: {e}")
+        print(f"Unexpected error: {e}")
 
+    
 if __name__ == "__main__":
     import argparse
 

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 service ModelService {
-  rpc StoreResults (ResultsRequest) returns (ResultsResponse);
-  rpc StoreMetrics (MetricsRequest) returns (MetricsResponse);
+  rpc StoreResults (stream ResultsRequest) returns (stream ResultsResponse);
+  rpc StoreMetrics (stream MetricsRequest) returns (MetricsResponse);
 }
 
 message ResultsRequest {

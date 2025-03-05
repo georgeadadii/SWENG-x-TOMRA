@@ -71,13 +71,23 @@ def get_results() -> List[ResultType]:
     with driver.session() as session:
         result = session.run(
             """
-            MATCH (r:Result)-[:CLASSIFIED_FROM]->(i:Image)
-            OPTIONAL MATCH (i)-[:HAS_ANNOTATION]->(a:Annotation)
-            RETURN r.class_label AS class_label, 
-                   r.confidence AS confidence,
+            MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
+            MATCH (i)-[:HAS_BOUNDING_BOX]->(bb:BoundingBox)-[:HAS_LABEL]->(l:Label)
+            RETURN l.name AS class_label, 
+                   bb.confidence AS confidence,
                    i.image_url AS image_url,
-                   COALESCE(a.classified, false) AS classified,
-                   COALESCE(a.misclassified, false) AS misclassified
+                   a.classified AS classified,
+                   a.misclassified AS misclassified
+            
+            UNION
+            
+            MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
+            MATCH (i)-[:HAS_CLASSIFICATION]->(ca:ClassificationAnnotation)-[:HAS_LABEL]->(l:Label)
+            RETURN l.name AS class_label, 
+                   ca.confidence AS confidence,
+                   i.image_url AS image_url,
+                   a.classified AS classified,
+                   a.misclassified AS misclassified
             """
         )
         return [

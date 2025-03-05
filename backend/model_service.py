@@ -35,13 +35,14 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
             else:
                 raise Exception(f"Failed to download image, status code: {response.status_code}")
 
-            for label, confidence in zip(request.class_labels, request.confidences):
+            for label, confidence, bbox in zip(request.class_labels, request.confidences, request.bbox_coordinates):
                 neo4j_request = neo4j_service_pb2.ClassificationResult(
                     class_label=label,
                     confidence=confidence,
                     image_url=image_url,
                     batch_id=request.batch_id,
-                    task_type=request.task_type
+                    task_type=request.task_type,
+                    bbox_coordinates=bbox
                 )
                 neo4j_response = self.neo4j_stub.StoreResult(neo4j_request)
                 print("Neo4j StoreResult response:", neo4j_response.success)

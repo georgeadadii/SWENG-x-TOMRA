@@ -19,27 +19,20 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         try:
             for request in request_iterator:
                 print("Received image and results from client.")
-
+    
                 # Log class labels and confidences
                 for label, confidence in zip(request.class_labels, request.confidences):
                     print(f"Class: {label}, Confidence: {confidence}")
-
-                # Download and save the image
+    
+                # Process results, skipping image download
                 image_url = request.image_url
-                response = requests.get(image_url)
-                if response.status_code == 200:
-                    image_path = f"received_{request.batch_id}.jpg"
-                    with open(image_path, "wb") as f:
-                        f.write(response.content)
-                    print(f"Image saved to {image_path}")
-                else:
-                    print(f"Failed to download image: {image_url}")
-                    yield model_service_pb2.ResultsResponse(success=False, message=f"Failed to download {image_url}.")
-                    continue  
-
-                # Send data to Neo4j service
+                print(f"Processing metadata for image with URL: {image_url}")
+    
                 success = True
                 try:
+                    if not (len(request.class_labels) == len(request.confidences) == len(request.bbox_coordinates)):
+                        raise ValueError("Mismatched list lengths in request.")
+    
                     for label, confidence, bbox in zip(request.class_labels, request.confidences, request.bbox_coordinates):
                         neo4j_request = neo4j_service_pb2.ClassificationResult(
                             class_label=label,
@@ -49,32 +42,39 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                             task_type=request.task_type,
                             bbox_coordinates=bbox
                         )
-                        neo4j_response = self.neo4j_stub.StoreResult(iter([neo4j_request]))
-                        for res in neo4j_response:
-                            if not res.success:
-                                print("Neo4j StoreResult failed")
-                                success = False
-
-                except grpc.RpcError as e:
-                    print(f"Neo4j gRPC Error: {str(e)}")
-                    yield model_service_pb2.ResultsResponse(success=False, message=f"Neo4j Error: {str(e)}")
-                    continue  
-
+    
+                        try:
+                            neo4j_response = self.neo4j_stub.StoreResult(iter([neo4j_request]))
+                            for res in neo4j_response:
+                                if not res.success:
+                                    print("Neo4j StoreResult failed")
+                                    success = False
+                        except grpc.RpcError as e:
+                            print(f"Neo4j gRPC Error: {e.code()} - {e.details()}")
+                            context.set_code(e.code())
+                            context.set_details(e.details())
+                            return  # Stop processing this request
+    
+                except Exception as e:
+                    print(f"Unexpected error when processing request: {e}")
+                    context.set_code(grpc.StatusCode.INTERNAL)
+                    context.set_details(str(e))
+                    return
+    
                 yield model_service_pb2.ResultsResponse(
                     success=success,
-                    message="Results and image stored successfully." if success else "Partial success, some issues encountered."
+                    message="Results stored successfully." if success else "Some issues encountered."
                 )
-
-            print("Finished processing all requests successfully.") 
-
+    
         except Exception as e:
-            print(f"Unexpected error in StoreResults: {e}")  
+            print(f"Unexpected error in StoreResults: {e}")
             context.set_code(grpc.StatusCode.UNKNOWN)
             context.set_details(f"Server Error: {str(e)}")
             yield model_service_pb2.ResultsResponse(success=False, message=f"Server error: {str(e)}")
-
+    
         finally:
-            print("StoreResults iterator fully consumed.")  
+            print("StoreResults iterator fully consumed.")
+
     
     def StoreMetrics(self, request_iterator, context):
         """Handles a stream of metric results and stores them in Neo4j."""

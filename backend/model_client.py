@@ -8,6 +8,7 @@ import json
 from collections import Counter
 import metrics
 import torch
+import time
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
@@ -33,7 +34,6 @@ def upload_to_azure(image_path):
 
     """Creates the Blob URL"""
     image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{os.path.basename(image_path)}"
-    # print(image_url)
 
     return image_url 
 
@@ -76,8 +76,9 @@ def process_image(image_path, model, quantize=False):
     return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
 
 
-def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type):
-    """Send a stream of image results to the gRPC server."""
+def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, retries=3, delay=2):
+    """Send a stream of image results to the gRPC server with retry logic."""
+    
     # Create a generator to stream multiple requests
     def request_generator():
         for image_url, labels, confs, bboxes in zip(image_urls, labels_list, confs_list, bboxes_list):
@@ -94,53 +95,62 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
 
-        try:
-            response_iterator = stub.StoreResults(request_generator())  # Send as a stream
+        # Retry logic
+        for attempt in range(retries):
+            try:
+                response_iterator = stub.StoreResults(request_generator())  # Send as a stream
 
-            for image_name, response in zip(image_urls, response_iterator):
-                print(f"Server response for:\n{image_name}\n- {response.message}")
+                for image_name, response in zip(image_urls, response_iterator):
+                    print(f"Server response for:\n{image_name}\n- {response.message}")
+                return  # Exit the function if everything is successful
 
+            except grpc.RpcError as e:
+                print(f"gRPC Error1: {e.code()} - {e.details()}")
 
-        except grpc.RpcError as e:
-            print(f"gRPC Error1: {e.code()} - {e.details()}")
+                if e.code() == grpc.StatusCode.UNAVAILABLE:  # Socket closed or server not available
+                    print(f"gRPC Error: Socket closed, retrying in {delay} seconds...")
+                    time.sleep(delay)
+                else:
+                    # If it's not a transient error, re-raise it
+                    raise
 
-        except Exception as e:
-            print(f"Unexpected error while sending results: {str(e)}")
+            except Exception as e:
+                print(f"Unexpected error while sending results: {str(e)}")
+                break  # Exit the loop on unexpected error
+
+        print("Max retries reached, operation failed.")
 
 
 def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
-        
-        def request_generator():
-            yield model_service_pb2.MetricsRequest(
-                total_images=metrics["Total images"],
-                total_time=metrics["Total time"],
-                average_confidence_score=metrics["Average confidence score"],
-                average_confidence_for_labels=json.dumps(metrics["Average confidence for different labels"]),
-                confidence_distribution=json.dumps(metrics["Confidence distribution"]),
-                detection_count_distribution=json.dumps(metrics["Detection count distribution"]),
-                category_distribution=json.dumps(metrics["Category distribution"]),
-                category_percentages=json.dumps(metrics["Category percentages"]),
-                total_preprocessing_time=metrics["Total preprocessing time"],
-                total_inference_time=metrics["Total inference time"],
-                total_postprocessing_time=metrics["Total postprocessing time"],
-                average_inference_time=metrics["Average inference time"],
-                inference_time_distribution=json.dumps(metrics["Inference time distribution"]),
-                average_box_size=metrics["Average box size"],
-                box_size_distribution=json.dumps(metrics["Box size distribution"]),
-                average_box_proportion=metrics["Average box proportion"],
-                box_proportion_distribution=json.dumps(metrics["Box proportion distribution"]),
-                average_preprocess_time=metrics["Average preprocess time"],
-                average_postprocess_time=metrics["Average postprocess time"],
-                preprocess_time_distribution=json.dumps(metrics["Preprocess time distribution"]),
-                postprocess_time_distribution=json.dumps(metrics["Postprocess time distribution"]),
-                batch_id=batch_id
-            )
-            response_iterator = stub.StoreMetrics(request_generator())
-            for response in response_iterator:
-                print(f"Server response: {response.message}")
+        request = model_service_pb2.MetricsRequest(
+            total_images=metrics["Total images"],
+            total_time=metrics["Total time"],
+            average_confidence_score=metrics["Average confidence score"],
+            average_confidence_for_labels=json.dumps(metrics["Average confidence for different labels"]),
+            confidence_distribution=json.dumps(metrics["Confidence distribution"]),
+            detection_count_distribution=json.dumps(metrics["Detection count distribution"]),
+            category_distribution=json.dumps(metrics["Category distribution"]),
+            category_percentages=json.dumps(metrics["Category percentages"]),
+            total_preprocessing_time=metrics["Total preprocessing time"],
+            total_inference_time=metrics["Total inference time"],
+            total_postprocessing_time=metrics["Total postprocessing time"],
+            average_inference_time=metrics["Average inference time"],
+            inference_time_distribution=json.dumps(metrics["Inference time distribution"]),
+            average_box_size=metrics["Average box size"],
+            box_size_distribution=json.dumps(metrics["Box size distribution"]),
+            average_box_proportion=metrics["Average box proportion"],
+            box_proportion_distribution=json.dumps(metrics["Box proportion distribution"]),
+            average_preprocess_time=metrics["Average preprocess time"],
+            average_postprocess_time=metrics["Average postprocess time"],
+            preprocess_time_distribution=json.dumps(metrics["Preprocess time distribution"]),
+            postprocess_time_distribution=json.dumps(metrics["Postprocess time distribution"]),
+            batch_id=batch_id
+        )
+        response = stub.StoreMetrics(request)
+        print(f"Server response: {response.message}")
 
 
 def run(quantize=False):

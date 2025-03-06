@@ -19,7 +19,7 @@ class ModelServiceStub(object):
                 request_serializer=model__service__pb2.ResultsRequest.SerializeToString,
                 response_deserializer=model__service__pb2.ResultsResponse.FromString,
                 )
-        self.StoreMetrics = channel.stream_unary(
+        self.StoreMetrics = channel.unary_unary(
                 '/ModelService/StoreMetrics',
                 request_serializer=model__service__pb2.MetricsRequest.SerializeToString,
                 response_deserializer=model__service__pb2.MetricsResponse.FromString,
@@ -35,7 +35,7 @@ class ModelServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StoreMetrics(self, request_iterator, context):
+    def StoreMetrics(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -49,7 +49,7 @@ def add_ModelServiceServicer_to_server(servicer, server):
                     request_deserializer=model__service__pb2.ResultsRequest.FromString,
                     response_serializer=model__service__pb2.ResultsResponse.SerializeToString,
             ),
-            'StoreMetrics': grpc.stream_unary_rpc_method_handler(
+            'StoreMetrics': grpc.unary_unary_rpc_method_handler(
                     servicer.StoreMetrics,
                     request_deserializer=model__service__pb2.MetricsRequest.FromString,
                     response_serializer=model__service__pb2.MetricsResponse.SerializeToString,
@@ -82,7 +82,7 @@ class ModelService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def StoreMetrics(request_iterator,
+    def StoreMetrics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -92,7 +92,7 @@ class ModelService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/ModelService/StoreMetrics',
+        return grpc.experimental.unary_unary(request, target, '/ModelService/StoreMetrics',
             model__service__pb2.MetricsRequest.SerializeToString,
             model__service__pb2.MetricsResponse.FromString,
             options, channel_credentials,

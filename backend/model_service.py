@@ -14,6 +14,7 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         self.neo4j_channel = grpc.insecure_channel("localhost:50052")
         self.neo4j_stub = neo4j_service_pb2_grpc.Neo4jServiceStub(self.neo4j_channel)
 
+
     def StoreResults(self, request_iterator, context):
         """Handles a stream of classification results, stores them, and streams responses."""
         try:
@@ -76,47 +77,38 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
             print("StoreResults iterator fully consumed.")
 
     
-    def StoreMetrics(self, request_iterator, context):
-        """Handles a stream of metric results and stores them in Neo4j."""
+    def StoreMetrics(self, request, context):
         try:
-            for request in request_iterator:
-                print("Received metrics from client.")
-
-                # Prepare and send metrics to Neo4j
-                neo4j_metrics_request = neo4j_service_pb2.MetricsResult(
-                    total_images=request.total_images,
-                    total_time=request.total_time,
-                    average_confidence_score=request.average_confidence_score,
-                    average_confidence_for_labels=request.average_confidence_for_labels,
-                    confidence_distribution=request.confidence_distribution,
-                    detection_count_distribution=request.detection_count_distribution,
-                    category_distribution=request.category_distribution,
-                    category_percentages=request.category_percentages,
-                    total_preprocessing_time=request.total_preprocessing_time,
-                    total_inference_time=request.total_inference_time,
-                    total_postprocessing_time=request.total_postprocessing_time,
-                    average_inference_time=request.average_inference_time,
-                    inference_time_distribution=request.inference_time_distribution,
-                    average_box_size=request.average_box_size,
-                    box_size_distribution=request.box_size_distribution,
-                    average_box_proportion=request.average_box_proportion,
-                    box_proportion_distribution=request.box_proportion_distribution,
-                    average_preprocess_time=request.average_preprocess_time,
-                    average_postprocess_time=request.average_postprocess_time,
-                    preprocess_time_distribution=request.preprocess_time_distribution,
-                    postprocess_time_distribution=request.postprocess_time_distribution,
-                    batch_id=request.batch_id
-                )
-
-                neo4j_response = self.neo4j_stub.StoreMetrics(iter([neo4j_metrics_request]))
-
-                for res in neo4j_response:
-                    print("Neo4j StoreMetrics response:", res.success)
-
-                yield model_service_pb2.MetricsResponse(success=True, message="Metrics stored successfully.")
-
+            print("Received metrics from client.")
+            neo4j_metrics_request = neo4j_service_pb2.MetricsResult(
+                total_images=request.total_images,
+                total_time=request.total_time,
+                average_confidence_score=request.average_confidence_score,
+                average_confidence_for_labels=request.average_confidence_for_labels,
+                confidence_distribution=request.confidence_distribution,
+                detection_count_distribution=request.detection_count_distribution,
+                category_distribution=request.category_distribution,
+                category_percentages=request.category_percentages,
+                total_preprocessing_time=request.total_preprocessing_time,
+                total_inference_time=request.total_inference_time,
+                total_postprocessing_time=request.total_postprocessing_time,
+                average_inference_time=request.average_inference_time,
+                inference_time_distribution=request.inference_time_distribution,
+                average_box_size=request.average_box_size,
+                box_size_distribution=request.box_size_distribution,
+                average_box_proportion=request.average_box_proportion,
+                box_proportion_distribution=request.box_proportion_distribution,
+                average_preprocess_time=request.average_preprocess_time,
+                average_postprocess_time=request.average_postprocess_time,
+                preprocess_time_distribution=request.preprocess_time_distribution,
+                postprocess_time_distribution=request.postprocess_time_distribution,
+                batch_id=request.batch_id
+            )
+            neo4j_response = self.neo4j_stub.StoreMetrics(neo4j_metrics_request)
+            print("Neo4j StoreMetrics response:", neo4j_response.success)
+            return model_service_pb2.MetricsResponse(success=True, message="Metrics stored successfully in Neo4j")
         except Exception as e:
-            yield model_service_pb2.MetricsResponse(success=False, message=f"Error storing metrics: {str(e)}")
+            return model_service_pb2.MetricsResponse(success=False, message=f"Error storing metrics: {str(e)}")
 
 
 def serve():
@@ -126,7 +118,6 @@ def serve():
     print("Server started, listening on [::]:50051")
     server.start()
     server.wait_for_termination()
-
 
 if __name__ == "__main__":
     serve()

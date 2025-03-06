@@ -19,7 +19,7 @@ class Neo4jServiceStub(object):
                 request_serializer=neo4j__service__pb2.ClassificationResult.SerializeToString,
                 response_deserializer=neo4j__service__pb2.StoreResultResponse.FromString,
                 )
-        self.StoreMetrics = channel.stream_unary(
+        self.StoreMetrics = channel.unary_unary(
                 '/Neo4jService/StoreMetrics',
                 request_serializer=neo4j__service__pb2.MetricsResult.SerializeToString,
                 response_deserializer=neo4j__service__pb2.StoreResultResponse.FromString,
@@ -40,7 +40,7 @@ class Neo4jServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StoreMetrics(self, request_iterator, context):
+    def StoreMetrics(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -60,7 +60,7 @@ def add_Neo4jServiceServicer_to_server(servicer, server):
                     request_deserializer=neo4j__service__pb2.ClassificationResult.FromString,
                     response_serializer=neo4j__service__pb2.StoreResultResponse.SerializeToString,
             ),
-            'StoreMetrics': grpc.stream_unary_rpc_method_handler(
+            'StoreMetrics': grpc.unary_unary_rpc_method_handler(
                     servicer.StoreMetrics,
                     request_deserializer=neo4j__service__pb2.MetricsResult.FromString,
                     response_serializer=neo4j__service__pb2.StoreResultResponse.SerializeToString,
@@ -98,7 +98,7 @@ class Neo4jService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def StoreMetrics(request_iterator,
+    def StoreMetrics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -108,7 +108,7 @@ class Neo4jService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/Neo4jService/StoreMetrics',
+        return grpc.experimental.unary_unary(request, target, '/Neo4jService/StoreMetrics',
             neo4j__service__pb2.MetricsResult.SerializeToString,
             neo4j__service__pb2.StoreResultResponse.FromString,
             options, channel_credentials,

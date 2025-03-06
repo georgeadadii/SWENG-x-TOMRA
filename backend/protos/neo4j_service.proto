@@ -2,7 +2,7 @@ syntax = "proto3";
 
 service Neo4jService {
   rpc StoreResult (stream ClassificationResult) returns (stream StoreResultResponse);
-  rpc StoreMetrics (stream MetricsResult) returns (StoreResultResponse);
+  rpc StoreMetrics (MetricsResult) returns (StoreResultResponse);
   rpc GetFeedback (FeedbackRequest) returns (stream FeedbackResponse);
 }
 

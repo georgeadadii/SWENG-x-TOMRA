@@ -1,3 +1,4 @@
+import traceback
 import grpc
 import model_service_pb2
 import model_service_pb2_grpc
@@ -7,6 +8,7 @@ import json
 from collections import Counter
 import metrics
 import torch
+import time
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
@@ -21,6 +23,7 @@ class YOLOv11:
 
     def get_task_type(self):
         return self.task_type
+    
 
 def upload_to_azure(image_path):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
@@ -31,9 +34,9 @@ def upload_to_azure(image_path):
 
     """Creates the Blob URL"""
     image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{os.path.basename(image_path)}"
-    print(image_url)
 
     return image_url 
+
 
 def quantize_model(model):
     """Quantize the YOLO model for lower energy consumption."""
@@ -41,6 +44,7 @@ def quantize_model(model):
     # Quantize the model dynamically (weights only)
     quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
     return quantized_model 
+
 
 def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
@@ -72,21 +76,50 @@ def process_image(image_path, model, quantize=False):
     return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
 
 
-def send_results_to_server(image_url, labels, confs, bboxes, batch_id, task_type):
-    """Send image data and results to the gRPC server."""
-    bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
+def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, retries=3, delay=2):
+    """Send a stream of image results to the gRPC server with retry logic."""
+    
+    # Create a generator to stream multiple requests
+    def request_generator():
+        for image_url, labels, confs, bboxes in zip(image_urls, labels_list, confs_list, bboxes_list):
+            bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
+            yield model_service_pb2.ResultsRequest(
+                image_url=image_url,
+                class_labels=labels,
+                confidences=confs,
+                batch_id=batch_id,
+                task_type=task_type,
+                bbox_coordinates=bbox_coords
+            )
+
     with grpc.insecure_channel("localhost:50051") as channel:
         stub = model_service_pb2_grpc.ModelServiceStub(channel)
-        request = model_service_pb2.ResultsRequest(
-            image_url=image_url,
-            class_labels=labels,
-            confidences=confs,
-            batch_id=batch_id,
-            task_type=task_type,
-            bbox_coordinates=bbox_coords
-        )
-        response = stub.StoreResults(request)
-        print(f"Server response: {response.message}")
+
+        # Retry logic
+        for attempt in range(retries):
+            try:
+                response_iterator = stub.StoreResults(request_generator())  # Send as a stream
+
+                for image_name, response in zip(image_urls, response_iterator):
+                    print(f"Server response for:\n{image_name}\n- {response.message}")
+                return  # Exit the function if everything is successful
+
+            except grpc.RpcError as e:
+                print(f"gRPC Error1: {e.code()} - {e.details()}")
+
+                if e.code() == grpc.StatusCode.UNAVAILABLE:  # Socket closed or server not available
+                    print(f"gRPC Error: Socket closed, retrying in {delay} seconds...")
+                    time.sleep(delay)
+                else:
+                    # If it's not a transient error, re-raise it
+                    raise
+
+            except Exception as e:
+                print(f"Unexpected error while sending results: {str(e)}")
+                break  # Exit the loop on unexpected error
+
+        print("Max retries reached, operation failed.")
+
 
 def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
@@ -119,6 +152,7 @@ def send_metrics_to_server(metrics, batch_id):
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
 
+
 def run(quantize=False):
     try:
         # Initialize the model
@@ -139,20 +173,20 @@ def run(quantize=False):
 
         batch_id = str(uuid.uuid4())
         data = {
-            'image_names': [],
+            'image_urls': [],
             'pre_times': [],
             'inf_times': [],
             'post_times': [],
-            'confs': [],
-            'labels': [],
+            'confs_list': [],
+            'labels_list': [],
             'detections': [],
             'label_counts': [],
-            'bboxes': [],
+            'bboxes_list': [],
             'box_props': [],
             'orig_shapes': []
         }
 
-        # Process each image and send results to the server
+        # Process each image and accumulate results for streaming
         for image_name in image_files:
             image_path = os.path.join(unprocessed_folder_path, image_name)
             print(f"Processing image: {image_name}")
@@ -162,22 +196,29 @@ def run(quantize=False):
             # Process the image using YOLO
             labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type  = process_image(image_path, model, quantize)
 
-            data['image_names'].append(image_name)
+            data['image_urls'].append(image_url)
             data['pre_times'].extend(pre_times)
             data['inf_times'].extend(inf_times)
             data['post_times'].extend(post_times)
-            data['confs'].append(confs)
-            data['labels'].append(labels)
+            data['confs_list'].append(confs)
+            data['labels_list'].append(labels)
             data['detections'].append(len(labels))
             data['label_counts'].append(Counter(labels))
-            data['bboxes'].append(bboxes)
+            data['bboxes_list'].append(bboxes)
             data['box_props'].append(proportions)
             data['orig_shapes'].append(orig_shape)
 
-            send_results_to_server(image_url, labels, confs, bboxes, batch_id, task_type)
-
+        # After all images are processed, send the results to the server in a stream
+        send_results_to_server(
+            data['image_urls'],  
+            data['labels_list'],  
+            data['confs_list'],  
+            data['bboxes_list'], 
+            batch_id, task_type
+        )
+        # Now, calculate and send the metrics
         stats = {
-            "Total images": metrics.calculate_total_images(data['image_names']),
+            "Total images": metrics.calculate_total_images(data['image_urls']),
             "Total time": metrics.calculate_total_time(data['pre_times'], data['inf_times'], data['post_times']),
             "Total preprocessing time": metrics.calculate_total_preprocessing_time(data['pre_times']),
             "Total inference time": metrics.calculate_total_inference_time(data['inf_times']),
@@ -185,25 +226,27 @@ def run(quantize=False):
             "Average preprocess time": metrics.calculate_avg_preprocess_time(data['pre_times']),
             "Average inference time": metrics.calculate_avg_inference_time(data['inf_times']),
             "Average postprocess time": metrics.calculate_avg_postprocess_time(data['post_times']),
-            "Average confidence score": metrics.calculate_avg_confidence(data['confs']),
-            "Average confidence for different labels": metrics.calculate_label_avg_confidences(data['labels'], data['confs']),
-            "Confidence distribution": metrics.calculate_confidence_distribution(data['confs']),
+            "Average confidence score": metrics.calculate_avg_confidence(data['confs_list']),
+            "Average confidence for different labels": metrics.calculate_label_avg_confidences(data['labels_list'], data['confs_list']),
+            "Confidence distribution": metrics.calculate_confidence_distribution(data['confs_list']),
             "Detection count distribution": metrics.calculate_detection_distribution(data['detections']),
             "Category distribution": metrics.calculate_category_distribution(data['label_counts']),
             "Category percentages": metrics.calculate_category_percentages(metrics.calculate_category_distribution(data['label_counts'])),
             "Inference time distribution": metrics.calculate_inference_time_distribution(data['inf_times']),
             "Preprocess time distribution": metrics.calculate_preprocess_time_distribution(data['pre_times']),
             "Postprocess time distribution": metrics.calculate_postprocess_time_distribution(data['post_times']),
-            "Average box size": metrics.calculate_avg_box_size(data['bboxes'], data['orig_shapes']),
-            "Box size distribution": metrics.calculate_box_size_distribution(data['bboxes'], data['orig_shapes']),
+            "Average box size": metrics.calculate_avg_box_size(data['bboxes_list'], data['orig_shapes']),
+            "Box size distribution": metrics.calculate_box_size_distribution(data['bboxes_list'], data['orig_shapes']),
             "Average box proportion": metrics.calculate_avg_box_proportion(data['box_props']),
             "Box proportion distribution": metrics.calculate_box_proportion_distribution(data['box_props'])
         }
+
         # Send metrics to the server
         send_metrics_to_server(stats, batch_id)
 
     except Exception as e:
         print(f"Client error: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     import argparse

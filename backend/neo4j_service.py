@@ -5,93 +5,91 @@ import neo4j_service_pb2_grpc
 from neo4j import GraphDatabase
 import uuid
 
+
 class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
     def __init__(self):
         # Initializing Neo4j
         self.driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
 
-    def StoreResult(self, request, context):
-        x1, y1, x2, y2 = map(float, request.bbox_coordinates.split(','))
+    def StoreResult(self, request_iterator, context):
+        """Handles a stream of classification results and stores them in Neo4j."""
+        # print("Store result works and I am here in Neo4j")
+        try:
+            for request in request_iterator:
+                x1, y1, x2, y2 = map(float, request.bbox_coordinates.split(','))
 
-        #Batch Node
-        with self.driver.session() as session:
-            session.run(
-                "MERGE (b:BatchNode {batch_id: $batch_id})",
-                batch_id=request.batch_id
-            )
-        #Image Node
-        with self.driver.session() as session:
-            session.run(
-                """
-                MERGE (i:Image {image_url: $image_url})
-                MERGE (b:BatchNode {batch_id: $batch_id})
-                MERGE (i)-[:BELONGS_TO]->(b)
-                """,
-                image_url=request.image_url,
-                batch_id=request.batch_id
-            )
-        # anno
-        with self.driver.session() as session:
-            session.run(
-                """
-                MATCH (i:Image {image_url: $image_url})
-                MERGE (i)-[:HAS_ANNOTATION]->(a:Annotation {
-                    task_type: $task_type
-                })
-                ON CREATE SET
-                    a.reviewed = $reviewed,
-                    a.classified = $classified,
-                    a.misclassified = $misclassified,
-                    a.created_at = datetime()
-                """,
-                image_url=request.image_url,
-                reviewed=False,
-                classified=False,
-                misclassified=False,
-                task_type=request.task_type
-            )
-        #Bbox
-        if(request.task_type=="object_detection"):
-            with self.driver.session() as session:
-                session.run(
-                    """
-                    MATCH (i:Image {image_url: $image_url})
-                    MERGE (bb:BoundingBox {
-                        x1: $x1,
-                        y1: $y1,
-                        x2: $x2,
-                        y2: $y2,
-                        confidence: $confidence
-                    })
-                    MERGE (l:Label {name: $class_label})
-                    MERGE (i)-[:HAS_BOUNDING_BOX]->(bb)
-                    MERGE (bb)-[:HAS_LABEL]->(l)
-                    """,
-                    image_url=request.image_url,
-                    x1=x1,
-                    y1=y1,
-                    x2=x2,
-                    y2=y2,
-                    confidence=request.confidence,
-                    class_label=request.class_label
+                with self.driver.session() as session:
+                    # Batch Node
+                    session.run(
+                        "MERGE (b:BatchNode {batch_id: $batch_id})",
+                        batch_id=request.batch_id
+                    )
 
-                )
-        # Class. Anno.
-        if (request.task_type == "image_classification"):
-            with self.driver.session() as session:
-                session.run(
-                    """
-                    MATCH (i:Image {image_url: $image_url})
-                    MERGE (ca:ClassificationAnnotation {confidence: $confidence})
-                    MERGE (l:Label {name: $class_label})
-                    MERGE (i)-[:HAS_CLASSIFICATION]->(ca)
-                    MERGE (ca)-[:HAS_LABEL]->(l)
-                    """,
-                    image_url=request.image_url,
-                    confidence=request.confidence,
-                    class_label = request.class_label
-                )
-        return neo4j_service_pb2.StoreResultResponse(success=True)
+                    # Image Node
+                    session.run(
+                        """
+                        MERGE (i:Image {image_url: $image_url})
+                        MERGE (b:BatchNode {batch_id: $batch_id})
+                        MERGE (i)-[:BELONGS_TO]->(b)
+                        """,
+                        image_url=request.image_url,
+                        batch_id=request.batch_id
+                    )
+
+                    # Annotation Node
+                    session.run(
+                        """
+                        MATCH (i:Image {image_url: $image_url})
+                        MERGE (i)-[:HAS_ANNOTATION]->(a:Annotation {
+                            task_type: $task_type
+                        })
+                        ON CREATE SET
+                            a.reviewed = false,
+                            a.classified = false,
+                            a.misclassified = false,
+                            a.created_at = datetime()
+                        """,
+                        image_url=request.image_url,
+                        task_type=request.task_type
+                    )
+
+                    # Bounding Box for Object Detection
+                    if request.task_type == "object_detection":
+                        session.run(
+                            """
+                            MATCH (i:Image {image_url: $image_url})
+                            MERGE (bb:BoundingBox {
+                                x1: $x1, y1: $y1, x2: $x2, y2: $y2, confidence: $confidence
+                            })
+                            MERGE (l:Label {name: $class_label})
+                            MERGE (i)-[:HAS_BOUNDING_BOX]->(bb)
+                            MERGE (bb)-[:HAS_LABEL]->(l)
+                            """,
+                            image_url=request.image_url,
+                            x1=x1, y1=y1, x2=x2, y2=y2,
+                            confidence=request.confidence,
+                            class_label=request.class_label
+                        )
+
+                    # Classification Annotation for Image Classification
+                    if request.task_type == "image_classification":
+                        session.run(
+                            """
+                            MATCH (i:Image {image_url: $image_url})
+                            MERGE (ca:ClassificationAnnotation {confidence: $confidence})
+                            MERGE (l:Label {name: $class_label})
+                            MERGE (i)-[:HAS_CLASSIFICATION]->(ca)
+                            MERGE (ca)-[:HAS_LABEL]->(l)
+                            """,
+                            image_url=request.image_url,
+                            confidence=request.confidence,
+                            class_label=request.class_label
+                        )
+
+                yield neo4j_service_pb2.StoreResultResponse(success=True)
+
+        except Exception as e:
+            yield neo4j_service_pb2.StoreResultResponse(success=False)
 
     def StoreMetrics(self, request, context):
         metric_id = str(uuid.uuid4())
@@ -152,6 +150,7 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                 postprocess_distribution_json=request.postprocess_time_distribution,
             )
         return neo4j_service_pb2.StoreResultResponse(success=True)
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

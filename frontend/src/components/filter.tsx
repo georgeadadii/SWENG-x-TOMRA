@@ -56,6 +56,11 @@ const statusFilters: FilterOption[] = [
 
 
 const labelOptions: Option[] = [
+  { value: "dog", label: "Dog" },
+  { value: "cat", label: "Cat" },
+  { value: "bird", label: "Bird" },
+  { value: "sheep", label: "Sheep" },
+  { value: "cow", label: "Cow" },
   { value: "person", label: "Person" },
   { value: "car", label: "Car" },
   { value: "animal", label: "Animal" },
@@ -65,11 +70,17 @@ const labelOptions: Option[] = [
   { value: "technology", label: "Technology" },
 ]
 
-export function ImageClassificationFilter() {
+export function ImageClassificationFilter({ 
+  selectedLabels = [],  
+  setSelectedLabels 
+}: { 
+  selectedLabels?: Option[], 
+  setSelectedLabels: (labels: Option[]) => void 
+}) { 
   const [dateFilter, setDateFilter] = useState<FilterOption>(dateFilters[2])
   const [statusFilter, setStatusFilter] = useState<FilterOption>(statusFilters[0])
   //const [confidenceFilter, setConfidenceFilter] = useState<FilterOption>(confidenceFilters[0])
-  const [selectedLabels, setSelectedLabels] = useState<Option[]>([])
+  //const [selectedLabels, setSelectedLabels] = useState<Option[]>([])
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +177,7 @@ export function ImageClassificationFilter() {
 
       <div className="text-sm text-muted-foreground mb-6">
         Showing results for: {dateFilter.label}, {statusFilter.label},
-        {selectedLabels.length > 0 && <>, Labels: {selectedLabels.map((label) => label.label).join(", ")}</>}
+        {selectedLabels.length > 0 && <> Labels: {selectedLabels.map((label) => label.label).join(", ")}</>}
       </div>
 
     </div>

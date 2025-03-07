@@ -4,6 +4,9 @@ import { gql, useQuery, useMutation } from "@apollo/client";
 import client from "@/lib/apolloClient";
 import { useState, useEffect, useMemo } from "react";
 import { FC } from "react";
+import type { Option } from "@/components/ui/multi-select";
+import { ImageClassificationFilter } from "./filter";
+
 
 interface ImageData {
     imageUrl: string;
@@ -31,7 +34,7 @@ const STORE_FEEDBACK = gql`
   }
 `;
 
-const ImageGrid: FC = () => {
+const ImageGrid: FC<{ selectedLabels: Option[], setSelectedLabels: (labels: Option[]) => void }> = ({ selectedLabels, setSelectedLabels }) => {
     const { data, loading, error } = useQuery<{ results: ImageData[] }>(GET_IMAGES, { client });
     const [storeFeedback] = useMutation(STORE_FEEDBACK, { client });
     const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
@@ -57,14 +60,23 @@ const ImageGrid: FC = () => {
 
     const uniqueImages = useMemo(() => {
         const seen = new Set();
-        return data?.results.filter(image => {
+        return data?.results?.filter(image => {
+            // Check for duplicate images
             if (seen.has(image.imageUrl)) {
                 return false;
             }
             seen.add(image.imageUrl);
-            return true;
+
+            // If no labels are selected, show all images
+            if (!selectedLabels?.length) {
+                return true;
+            }
+            const normalizedImageLabel = image.classLabel.toLowerCase().trim();
+            return selectedLabels.some(label => 
+                label.value.toLowerCase().trim() === normalizedImageLabel
+            );
         }) || [];
-    }, [data]);
+    }, [data, selectedLabels]); // Add selectedLabels to dependencies
 
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";

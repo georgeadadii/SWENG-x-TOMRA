@@ -18,6 +18,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 type FilterOption = {
@@ -40,7 +42,7 @@ const dateFilters: FilterOption[] = [
   { value: "all", label: "Any date" },
 ]
 
-const statusFilters: FilterOption[] = [
+const statusFilters: { value: StatusFilter; label: string; icon?: React.ComponentType<{ className?: string }> }[] = [
   { value: "all", label: "All statuses" },
   { value: "correct", label: "Correct", icon: CheckCircle },
   { value: "misclassified", label: "Misclassified", icon: XCircle },
@@ -72,13 +74,16 @@ const labelOptions: Option[] = [
 
 export function ImageClassificationFilter({ 
   selectedLabels = [],  
-  setSelectedLabels 
+  setSelectedLabels,
+  statusFilter,
+  setStatusFilter
 }: { 
   selectedLabels?: Option[], 
-  setSelectedLabels: (labels: Option[]) => void 
+  setSelectedLabels: (labels: Option[]) => void,
+  statusFilter: StatusFilter,
+  setStatusFilter: (status: StatusFilter) => void
 }) { 
   const [dateFilter, setDateFilter] = useState<FilterOption>(dateFilters[2])
-  const [statusFilter, setStatusFilter] = useState<FilterOption>(statusFilters[0])
   //const [confidenceFilter, setConfidenceFilter] = useState<FilterOption>(confidenceFilters[0])
   //const [selectedLabels, setSelectedLabels] = useState<Option[]>([])
 
@@ -133,16 +138,21 @@ export function ImageClassificationFilter({
           trigger={
             <Box variant="outline" className="w-[200px] justify-between">
               <Filter className="mr-2 h-4 w-4" />
-              {statusFilter.label}
+              {statusFilters.find(f => f.value === statusFilter)?.label || 'All statuses'}
               <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
             </Box>
           }
         >
           {statusFilters.map((filter) => (
-            <DropdownItem key={filter.value} onClick={() => setStatusFilter(filter)}>
+            <DropdownItem 
+              key={filter.value} 
+              onClick={() => setStatusFilter(filter.value)}
+            >
               {filter.icon && <filter.icon className="h-4 w-4 mr-2" />}
               {filter.label}
-              {filter.value === statusFilter.value && <CheckCircle className="ml-auto h-4 w-4 opacity-50" />}
+              {filter.value === statusFilter && 
+                <CheckCircle className="ml-auto h-4 w-4 opacity-50" />
+              }
             </DropdownItem>
           ))}
         </Dropdown>
@@ -176,7 +186,7 @@ export function ImageClassificationFilter({
       </div>
 
       <div className="text-sm text-muted-foreground mb-6">
-        Showing results for: {dateFilter.label}, {statusFilter.label},
+        Showing results for: {dateFilter.label}, {statusFilters.find(f => f.value === statusFilter)?.label || 'All statuses'},
         {selectedLabels.length > 0 && <> Labels: {selectedLabels.map((label) => label.label).join(", ")}</>}
       </div>
 

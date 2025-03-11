@@ -5,9 +5,12 @@ import { ImageClassificationFilter } from "@/components/filter";
 import ImageGrid from "@/components/ImageGrid";
 import { MultiSelect, type Option } from "@/components/ui/multi-select";
 
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+
 const DashboardPage: React.FC = () => {
 
   const [selectedLabels, setSelectedLabels] = useState<Option[]>([]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const handleSelectedLabelsChange = (labels: Option[]) => {
     console.log(labels); // Debugging selected labels
@@ -21,10 +24,12 @@ const DashboardPage: React.FC = () => {
         <ImageClassificationFilter
           selectedLabels={selectedLabels}
           setSelectedLabels={handleSelectedLabelsChange}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
         />
       </div>
 
-      <ImageGrid selectedLabels={selectedLabels} setSelectedLabels={handleSelectedLabelsChange} />
+      <ImageGrid selectedLabels={selectedLabels} setSelectedLabels={handleSelectedLabelsChange} statusFilter={statusFilter} />
     </div>
   );
 };

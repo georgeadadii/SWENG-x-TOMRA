@@ -34,7 +34,21 @@ const STORE_FEEDBACK = gql`
   }
 `;
 
-const ImageGrid: FC<{ selectedLabels: Option[], setSelectedLabels: (labels: Option[]) => void }> = ({ selectedLabels, setSelectedLabels }) => {
+// Add this type above the component
+type FilterStatus = 'all' | 'correct' | 'incorrect' | 'unclassified';
+
+// Add this type at the top with other interfaces
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+
+const ImageGrid: FC<{ 
+    selectedLabels: Option[], 
+    setSelectedLabels: (labels: Option[]) => void,
+    statusFilter: StatusFilter  // new prop
+}> = ({ 
+    selectedLabels, 
+    setSelectedLabels, 
+    statusFilter 
+}) => {
     const { data, loading, error } = useQuery<{ results: ImageData[] }>(GET_IMAGES, { client });
     const [storeFeedback] = useMutation(STORE_FEEDBACK, { client });
     const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
@@ -67,16 +81,30 @@ const ImageGrid: FC<{ selectedLabels: Option[], setSelectedLabels: (labels: Opti
             }
             seen.add(image.imageUrl);
 
-            // If no labels are selected, show all images
+            // Status filtering
+            switch (statusFilter) {
+                case 'correct':
+                    if (!image.classified || image.misclassified) return false;
+                    break;
+                case 'misclassified':
+                    if (!image.misclassified) return false;
+                    break;
+                case 'not classified':
+                    if (image.classified || image.misclassified) return false;
+                    break;
+            }
+
+            // Label filtering
             if (!selectedLabels?.length) {
                 return true;
             }
+
             const normalizedImageLabel = image.classLabel.toLowerCase().trim();
             return selectedLabels.some(label => 
                 label.value.toLowerCase().trim() === normalizedImageLabel
             );
         }) || [];
-    }, [data, selectedLabels]); // Add selectedLabels to dependencies
+    }, [data, selectedLabels, statusFilter]);
 
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";

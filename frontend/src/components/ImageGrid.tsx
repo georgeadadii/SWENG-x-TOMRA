@@ -14,6 +14,7 @@ interface ImageData {
     confidence: number;
     classified: boolean;
     misclassified: boolean;
+    createdAt: string;
 }
 
 const GET_IMAGES = gql`
@@ -24,6 +25,7 @@ const GET_IMAGES = gql`
       confidence
       classified
       misclassified
+      createdAt
     }
   }
 `;
@@ -34,20 +36,29 @@ const STORE_FEEDBACK = gql`
   }
 `;
 
-// Add this type above the component
-type FilterStatus = 'all' | 'correct' | 'incorrect' | 'unclassified';
 
-// Add this type at the top with other interfaces
 type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
 
+function daysFromToday(targetDate: string): number {
+    const today = new Date(); // Current date
+    const target = new Date(targetDate); // Convert input string to Date
+
+    const diffInMs = today.getTime() - target.getTime(); // Difference in milliseconds
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // Convert to days
+
+    return diffInDays;
+}
 const ImageGrid: FC<{ 
     selectedLabels: Option[], 
     setSelectedLabels: (labels: Option[]) => void,
-    statusFilter: StatusFilter  // new prop
+    statusFilter: StatusFilter,
+    dateFilter: DateFilter  
 }> = ({ 
     selectedLabels, 
     setSelectedLabels, 
-    statusFilter 
+    statusFilter, 
+    dateFilter
 }) => {
     const { data, loading, error } = useQuery<{ results: ImageData[] }>(GET_IMAGES, { client });
     const [storeFeedback] = useMutation(STORE_FEEDBACK, { client });
@@ -80,7 +91,21 @@ const ImageGrid: FC<{
                 return false;
             }
             seen.add(image.imageUrl);
-
+            // Date filtering
+            switch (dateFilter) {
+                case 'today':
+                    if (daysFromToday(image.createdAt)>1) return false;
+                    break;
+                case 'yesterday':
+                    if (daysFromToday(image.createdAt)>2) return false;
+                    break;
+                case 'last7days':
+                    if (daysFromToday(image.createdAt)>7) return false;
+                    break;
+                case 'last30days':
+                    if (daysFromToday(image.createdAt)>30) return false;
+                    break;   
+            }
             // Status filtering
             switch (statusFilter) {
                 case 'correct':
@@ -104,7 +129,7 @@ const ImageGrid: FC<{
                 label.value.toLowerCase().trim() === normalizedImageLabel
             );
         }) || [];
-    }, [data, selectedLabels, statusFilter]);
+    }, [data, selectedLabels, statusFilter, dateFilter]);
 
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";

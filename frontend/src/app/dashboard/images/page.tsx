@@ -6,12 +6,12 @@ import ImageGrid from "@/components/ImageGrid";
 import { MultiSelect, type Option } from "@/components/ui/multi-select";
 
 type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
-
+type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
 const DashboardPage: React.FC = () => {
 
   const [selectedLabels, setSelectedLabels] = useState<Option[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const handleSelectedLabelsChange = (labels: Option[]) => {
     console.log(labels); // Debugging selected labels
     setSelectedLabels(labels); // Update the selected labels state
@@ -26,10 +26,12 @@ const DashboardPage: React.FC = () => {
           setSelectedLabels={handleSelectedLabelsChange}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
         />
       </div>
 
-      <ImageGrid selectedLabels={selectedLabels} setSelectedLabels={handleSelectedLabelsChange} statusFilter={statusFilter} />
+      <ImageGrid selectedLabels={selectedLabels} setSelectedLabels={handleSelectedLabelsChange} statusFilter={statusFilter} dateFilter={dateFilter}/>
     </div>
   );
 };

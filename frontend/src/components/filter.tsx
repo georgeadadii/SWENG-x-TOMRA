@@ -110,7 +110,7 @@ export function ImageClassificationFilter({
               <DialogTitle>About Image Classification Filters</DialogTitle>
               <DialogDescription>
                 This tool allows you to filter and sort through classified images based on various criteria such as
-                date, status, confidence level, and labels.
+                date of creation, classification status and labels.
               </DialogDescription>
             </DialogHeader>
             <p className="my-4 text-sm">

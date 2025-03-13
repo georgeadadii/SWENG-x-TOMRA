@@ -37,7 +37,7 @@ const STORE_FEEDBACK = gql`
 `;
 
 
-type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
 type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
 
 function daysFromToday(targetDate: string): number {
@@ -114,7 +114,7 @@ const ImageGrid: FC<{
                 case 'misclassified':
                     if (!image.misclassified) return false;
                     break;
-                case 'not classified':
+                case 'not reviewed':
                     if (image.classified || image.misclassified) return false;
                     break;
             }

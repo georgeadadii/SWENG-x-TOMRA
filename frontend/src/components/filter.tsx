@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
-type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not classified';
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
 type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
@@ -47,7 +47,7 @@ const statusFilters: { value: StatusFilter; label: string; icon?: React.Componen
   { value: "all", label: "All statuses" },
   { value: "correct", label: "Correct", icon: CheckCircle },
   { value: "misclassified", label: "Misclassified", icon: XCircle },
-  { value: "not classified", label: "Not classified", icon: CircleSlash },
+  { value: "not reviewed", label: "Not reviewed", icon: CircleSlash },
 ]
 
 /*const confidenceFilters: FilterOption[] = [

@@ -50,7 +50,7 @@ frontend_test:
   stage: test
   tags:
     - maven
-  image: node:18-alpine  # Updated to Node.js 18
+  image: node:16
   before_script:
     - echo "Cleaning up disk space..."
     - df -h 
@@ -96,7 +96,7 @@ frontend_build:
   stage: build
   tags:
     - maven
-  image: node:18-alpine  # Updated to Node.js 18
+  image: node:16
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."

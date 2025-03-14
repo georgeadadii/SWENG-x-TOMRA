@@ -52,11 +52,17 @@ frontend_test:
     - maven
   image: node:18-alpine  # Updated to Node.js 18
   before_script:
-    - echo "Cleaning up before starting the job..."
-    - rm -rf frontend/node_modules/
-    - rm -rf frontend/.cache/
+    - echo "Cleaning up disk space..."
+    - df -h 
+    - echo "Removing unused Docker images, containers, and volumes..."
+    - docker system prune -a -f  
+    - docker volume prune -f     
+    - echo "Clearing npm cache..."
     - npm cache clean --force
-    - df -h  # Check disk space
+    - echo "Removing temporary files..."
+    - rm -rf /tmp/*  
+    - rm -rf /var/cache/*  
+    - df -h  
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."

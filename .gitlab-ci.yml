@@ -58,7 +58,7 @@ frontend_test:
     - npm cache clean --force
     - echo "Removing temporary files..."
     - rm -rf /tmp/*  
-    - rm -rf /var/cache/*  
+    - rm -rf /cache/*  
     - df -h  
   script:
     - cd frontend

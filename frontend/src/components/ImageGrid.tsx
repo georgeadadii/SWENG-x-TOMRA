@@ -4,6 +4,9 @@ import { gql, useQuery, useMutation } from "@apollo/client";
 import client from "@/lib/apolloClient";
 import { useState, useEffect, useMemo } from "react";
 import { FC } from "react";
+import type { Option } from "@/components/ui/multi-select";
+import { ImageClassificationFilter } from "./filter";
+
 
 interface ImageData {
     imageUrl: string;
@@ -11,6 +14,7 @@ interface ImageData {
     confidence: number;
     classified: boolean;
     misclassified: boolean;
+    createdAt: string;
 }
 
 const GET_IMAGES = gql`
@@ -21,6 +25,7 @@ const GET_IMAGES = gql`
       confidence
       classified
       misclassified
+      createdAt
     }
   }
 `;
@@ -31,7 +36,30 @@ const STORE_FEEDBACK = gql`
   }
 `;
 
-const ImageGrid: FC = () => {
+
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
+type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
+
+function daysFromToday(targetDate: string): number {
+    const today = new Date(); // Current date
+    const target = new Date(targetDate); // Convert input string to Date
+
+    const diffInMs = today.getTime() - target.getTime(); // Difference in milliseconds
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // Convert to days
+
+    return diffInDays;
+}
+const ImageGrid: FC<{ 
+    selectedLabels: Option[], 
+    setSelectedLabels: (labels: Option[]) => void,
+    statusFilter: StatusFilter,
+    dateFilter: DateFilter  
+}> = ({ 
+    selectedLabels, 
+    setSelectedLabels, 
+    statusFilter, 
+    dateFilter
+}) => {
     const { data, loading, error } = useQuery<{ results: ImageData[] }>(GET_IMAGES, { client });
     const [storeFeedback] = useMutation(STORE_FEEDBACK, { client });
     const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
@@ -57,14 +85,51 @@ const ImageGrid: FC = () => {
 
     const uniqueImages = useMemo(() => {
         const seen = new Set();
-        return data?.results.filter(image => {
+        return data?.results?.filter(image => {
+            // Check for duplicate images
             if (seen.has(image.imageUrl)) {
                 return false;
             }
             seen.add(image.imageUrl);
-            return true;
+            // Date filtering
+            switch (dateFilter) {
+                case 'today':
+                    if (daysFromToday(image.createdAt)>1) return false;
+                    break;
+                case 'yesterday':
+                    if (daysFromToday(image.createdAt)>2) return false;
+                    break;
+                case 'last7days':
+                    if (daysFromToday(image.createdAt)>7) return false;
+                    break;
+                case 'last30days':
+                    if (daysFromToday(image.createdAt)>30) return false;
+                    break;   
+            }
+            // Status filtering
+            switch (statusFilter) {
+                case 'correct':
+                    if (!image.classified || image.misclassified) return false;
+                    break;
+                case 'misclassified':
+                    if (!image.misclassified) return false;
+                    break;
+                case 'not reviewed':
+                    if (image.classified || image.misclassified) return false;
+                    break;
+            }
+
+            // Label filtering
+            if (!selectedLabels?.length) {
+                return true;
+            }
+
+            const normalizedImageLabel = image.classLabel.toLowerCase().trim();
+            return selectedLabels.some(label => 
+                label.value.toLowerCase().trim() === normalizedImageLabel
+            );
         }) || [];
-    }, [data]);
+    }, [data, selectedLabels, statusFilter, dateFilter]);
 
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";

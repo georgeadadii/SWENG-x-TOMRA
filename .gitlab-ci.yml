@@ -55,6 +55,8 @@ frontend_test:
     - echo "Cleaning up before starting the job..."
     - rm -rf frontend/node_modules/
     - rm -rf frontend/.cache/
+    - npm cache clean --force
+    - df -h
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."

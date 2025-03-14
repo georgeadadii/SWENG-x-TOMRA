@@ -35,6 +35,19 @@ export default function ImageSwiper() {
     }
   }, [data])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "a") {
+        handleSwipe("left")
+      } else if (event.key === "d") {
+        handleSwipe("right")
+      }
+    }
+  
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [images])
+  
   const handleSwipe = (swipeDirection: "left" | "right") => {
     if (images.length === 0) return
 

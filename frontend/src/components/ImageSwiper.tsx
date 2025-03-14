@@ -39,9 +39,9 @@ export default function ImageSwiper() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "a") {
+      if (event.key === "a" || event.key === "ArrowLeft") {
         handleSwipe("left")
-      } else if (event.key === "d") {
+      } else if (event.key === "d" || event.key === "ArrowRight") {
         handleSwipe("right")
       }
     }

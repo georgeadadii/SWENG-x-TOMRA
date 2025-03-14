@@ -51,6 +51,10 @@ frontend_test:
   tags:
     - maven
   image: node:16
+  before_script:
+    - echo "Cleaning up before starting the job..."
+    - rm -rf frontend/node_modules/
+    - rm -rf frontend/.cache/
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."
@@ -95,6 +99,9 @@ frontend_build:
     - npm run start &  
     - sleep 5  
     - echo "Build completed successfully."
+  after_script:
+    - echo "Cleaning up node_modules to free disk space..."
+    - rm -rf frontend/node_modules/
   artifacts:
     paths:
       - frontend/.next/

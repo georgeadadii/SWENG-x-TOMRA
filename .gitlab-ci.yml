@@ -54,9 +54,6 @@ frontend_test:
   before_script:
     - echo "Cleaning up disk space..."
     - df -h 
-    - echo "Removing unused Docker images, containers, and volumes..."
-    - docker system prune -a -f  
-    - docker volume prune -f     
     - echo "Clearing npm cache..."
     - npm cache clean --force
     - echo "Removing temporary files..."

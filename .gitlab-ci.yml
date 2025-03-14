@@ -57,6 +57,7 @@ frontend_test:
     - echo "Clearing npm cache..."
     - npm cache clean --force
     - echo "Removing temporary files..."
+    - ls -lah /cache
     - rm -rf /tmp/*  
     - rm -rf /cache/*  
     - df -h  

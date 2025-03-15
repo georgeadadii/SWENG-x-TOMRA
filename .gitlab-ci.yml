@@ -19,14 +19,15 @@ cleanup:
   image: docker:latest
   services:
     - name: docker:dind
-      entrypoint: ["env", "-u", "DOCKER_HOST"]
-      command: ["dockerd-entrypoint.sh"]
+      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2
     # See https://github.com/docker-library/docker/pull/166
     DOCKER_TLS_CERTDIR: ""
   script:
+    - echo "Resolving Docker host..."
+    - nslookup docker
     - echo "Running Docker system prune..."
     - docker system prune --force
     - echo "Docker system prune completed."

@@ -1,5 +1,4 @@
 stages:
-  - cleanup
   - setup
   - test
   - build
@@ -13,26 +12,6 @@ cache:
   paths:
     - .cache/pip
     - venv/
-
-cleanup:
-  stage: cleanup
-  image: docker:latest
-  services:
-    - name: docker:dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-    DOCKER_DRIVER: overlay2
-    # See https://github.com/docker-library/docker/pull/166
-    DOCKER_TLS_CERTDIR: ""
-  script:
-    - echo "Resolving Docker host..."
-    - nslookup docker
-    - echo "Running Docker system prune..."
-    - docker system prune --force
-    - echo "Docker system prune completed."
-  tags:
-    - maven
 
 # Setup
 setup:

@@ -24,9 +24,7 @@ cleanup:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
-    - echo "Clearing Docker cache..."
-    - clear-docker-cache space
-    - echo "Docker cache cleared."
+    - docker volume prune
   tags:
     - maven
 

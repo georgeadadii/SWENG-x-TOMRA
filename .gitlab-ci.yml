@@ -16,17 +16,16 @@ cache:
 
 cleanup:
   stage: cleanup
-  image: docker:20.10  # Specify Docker version
+  image: docker:latest
   services:
-    - docker:20.10-dind  # Match Docker version for dind
+    - name: docker:dind
+      alias: docker
   variables:
-    DOCKER_HOST: tcp://docker:2376  # Note: 2376 is for TLS
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_CERT_PATH: "/certs/client"
-    DOCKER_TLS_VERIFY: 1
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
   script:
     - echo "Clearing Docker cache..."
-    - docker ps -a -q -f status=exited | xargs --no-run-if-empty docker rm -v
+    - clear-docker-cache space
     - echo "Docker cache cleared."
   tags:
     - maven

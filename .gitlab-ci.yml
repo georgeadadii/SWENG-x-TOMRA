@@ -24,7 +24,8 @@ cleanup:
     DOCKER_TLS_CERTDIR: ""  # Disable TLS (optional, for simplicity)
   script:
     - echo "Cleaning up Docker cache and unused objects..."
-    - docker rm `docker ps -aq`
+    - docker rm $(docker ps -a -q)
+    - docker system prune -a
     - echo "Clearing the /cache directory..."
     - rm -rf /cache/*
     - df -h  # Check disk space after cleanup

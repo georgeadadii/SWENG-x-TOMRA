@@ -25,7 +25,7 @@ cleanup:
     DOCKER_TLS_CERTDIR: ""
   script:
     - unset DOCKER_HOST
-    - docker volume prune --force
+    - docker system prune
     - echo "Docker volume prune completed."
   tags:
     - maven

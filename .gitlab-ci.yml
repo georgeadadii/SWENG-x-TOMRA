@@ -60,6 +60,7 @@ frontend_test:
     - ls -lah /cache
     - rm -rf /tmp/*  
     - rm -rf /cache/*  
+    - du -sh /* 2>/dev/null | sort -hr | head -n 10 
     - df -h  
   script:
     - cd frontend

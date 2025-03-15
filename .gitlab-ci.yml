@@ -16,14 +16,14 @@ cache:
 
 cleanup:
   stage: cleanup
-  image: docker:latest
+  image: docker:20.10  # Specify Docker version
   services:
-    - name: docker:dind
-      command: ["--tls=false"]
+    - docker:20.10-dind  # Match Docker version for dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2376  # Note: 2376 is for TLS
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_CERT_PATH: "/certs/client"
+    DOCKER_TLS_VERIFY: 1
   script:
     - echo "Clearing Docker cache..."
     - docker ps -a -q -f status=exited | xargs --no-run-if-empty docker rm -v

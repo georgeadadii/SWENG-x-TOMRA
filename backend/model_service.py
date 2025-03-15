@@ -30,6 +30,8 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 print(f"Processing metadata for image with URL: {image_url}")
     
                 success = True
+                print(request.batch_id)
+                
                 try:
                     if not (len(request.class_labels) == len(request.confidences) == len(request.bbox_coordinates)):
                         raise ValueError("Mismatched list lengths in request.")
@@ -43,6 +45,8 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                             task_type=request.task_type,
                             bbox_coordinates=bbox
                         )
+
+                        print(label, confidence, image_url, request.task_type, bbox)
     
                         try:
                             neo4j_response = self.neo4j_stub.StoreResult(iter([neo4j_request]))

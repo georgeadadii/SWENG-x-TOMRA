@@ -12,18 +12,10 @@ import time
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
+from models.model_factory import ModelFactory
 
 AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
 CONTAINER_NAME = "sweng25group06cont"
-
-class YOLOv11:
-    def __init__(self, model_path):
-        self.model = YOLO(model_path)
-        self.task_type = "object_detection" 
-
-    def get_task_type(self):
-        return self.task_type
-    
 
 def upload_to_azure(image_path):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
@@ -37,44 +29,10 @@ def upload_to_azure(image_path):
 
     return image_url 
 
-
-def quantize_model(model):
-    """Quantize the YOLO model for lower energy consumption."""
-    print("Quantizing model...")
-    # Quantize the model dynamically (weights only)
-    quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
-    return quantized_model 
-
-
 def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
 
-    preprocess_times = []
-    inference_times = []
-    postprocess_times = []
-
-    results = model.model(image_path, verbose=False)
-    boxes = results[0].boxes
-    speed_info = results[0].speed
-    orig_shape = results[0].orig_shape
-
-    preprocess_times.append(speed_info["preprocess"])
-    inference_times.append(speed_info["inference"])
-    postprocess_times.append(speed_info["postprocess"])
-
-    bboxes = boxes.xyxy.tolist() if boxes.xyxy is not None else []
-    confs = boxes.conf.tolist() if boxes.conf is not None else []
-    class_ids = boxes.cls.tolist() if boxes.cls is not None else []
-    labels = [results[0].names[int(cls)] for cls in class_ids] if class_ids else []
-
-    width, height = orig_shape[1], orig_shape[0]
-    box_proportions = []
-    for x1, y1, x2, y2 in bboxes:
-        box_area = (x2 - x1) * (y2 - y1)
-        proportion = box_area / (width * height)
-        box_proportions.append(round(proportion, 4))
-    return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
-
+    return model.process_image(image_path)
 
 def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, retries=3, delay=2):
     """Send a stream of image results to the gRPC server with retry logic."""
@@ -82,7 +40,10 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
     # Create a generator to stream multiple requests
     def request_generator():
         for image_url, labels, confs, bboxes in zip(image_urls, labels_list, confs_list, bboxes_list):
-            bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
+            if task_type == "image_classification":
+                bbox_coords = ["0,0,0,0"] 
+            else:
+                bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
             yield model_service_pb2.ResultsRequest(
                 image_url=image_url,
                 class_labels=labels,
@@ -120,7 +81,6 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
 
         print("Max retries reached, operation failed.")
 
-
 def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
@@ -152,15 +112,9 @@ def send_metrics_to_server(metrics, batch_id):
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
 
-
-def run(quantize=False):
+def run(model_name, quantize=False):
     try:
-        # Initialize the model
-        model = YOLOv11("yolo11n.pt")  
-
-        # Quantize the model if requested
-        if quantize:
-            model.model = quantize_model(model.model)
+        model = ModelFactory.create_model(model_name, quantize)
 
         # Path to the folder containing unprocessed images
         unprocessed_folder_path = "unprocessed_images"
@@ -194,19 +148,19 @@ def run(quantize=False):
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type  = process_image(image_path, model, quantize)
+            labels, confs, bboxes, pre_times, inf_times, post_times, task_type  = process_image(image_path, model, quantize)
 
             data['image_urls'].append(image_url)
-            data['pre_times'].extend(pre_times)
-            data['inf_times'].extend(inf_times)
-            data['post_times'].extend(post_times)
+            # data['pre_times'].extend(pre_times)
+            # data['inf_times'].extend(inf_times)
+            # data['post_times'].extend(post_times)
             data['confs_list'].append(confs)
             data['labels_list'].append(labels)
-            data['detections'].append(len(labels))
-            data['label_counts'].append(Counter(labels))
+            # data['detections'].append(len(labels))
+            # data['label_counts'].append(Counter(labels))
             data['bboxes_list'].append(bboxes)
-            data['box_props'].append(proportions)
-            data['orig_shapes'].append(orig_shape)
+            # data['box_props'].append(proportions)
+            # data['orig_shapes'].append(orig_shape)
 
         # After all images are processed, send the results to the server in a stream
         send_results_to_server(
@@ -217,32 +171,32 @@ def run(quantize=False):
             batch_id, task_type
         )
         # Now, calculate and send the metrics
-        stats = {
-            "Total images": metrics.calculate_total_images(data['image_urls']),
-            "Total time": metrics.calculate_total_time(data['pre_times'], data['inf_times'], data['post_times']),
-            "Total preprocessing time": metrics.calculate_total_preprocessing_time(data['pre_times']),
-            "Total inference time": metrics.calculate_total_inference_time(data['inf_times']),
-            "Total postprocessing time": metrics.calculate_total_postprocessing_time(data['post_times']),
-            "Average preprocess time": metrics.calculate_avg_preprocess_time(data['pre_times']),
-            "Average inference time": metrics.calculate_avg_inference_time(data['inf_times']),
-            "Average postprocess time": metrics.calculate_avg_postprocess_time(data['post_times']),
-            "Average confidence score": metrics.calculate_avg_confidence(data['confs_list']),
-            "Average confidence for different labels": metrics.calculate_label_avg_confidences(data['labels_list'], data['confs_list']),
-            "Confidence distribution": metrics.calculate_confidence_distribution(data['confs_list']),
-            "Detection count distribution": metrics.calculate_detection_distribution(data['detections']),
-            "Category distribution": metrics.calculate_category_distribution(data['label_counts']),
-            "Category percentages": metrics.calculate_category_percentages(metrics.calculate_category_distribution(data['label_counts'])),
-            "Inference time distribution": metrics.calculate_inference_time_distribution(data['inf_times']),
-            "Preprocess time distribution": metrics.calculate_preprocess_time_distribution(data['pre_times']),
-            "Postprocess time distribution": metrics.calculate_postprocess_time_distribution(data['post_times']),
-            "Average box size": metrics.calculate_avg_box_size(data['bboxes_list'], data['orig_shapes']),
-            "Box size distribution": metrics.calculate_box_size_distribution(data['bboxes_list'], data['orig_shapes']),
-            "Average box proportion": metrics.calculate_avg_box_proportion(data['box_props']),
-            "Box proportion distribution": metrics.calculate_box_proportion_distribution(data['box_props'])
-        }
+        # stats = {
+        #     "Total images": metrics.calculate_total_images(data['image_urls']),
+        #     "Total time": metrics.calculate_total_time(data['pre_times'], data['inf_times'], data['post_times']),
+        #     "Total preprocessing time": metrics.calculate_total_preprocessing_time(data['pre_times']),
+        #     "Total inference time": metrics.calculate_total_inference_time(data['inf_times']),
+        #     "Total postprocessing time": metrics.calculate_total_postprocessing_time(data['post_times']),
+        #     "Average preprocess time": metrics.calculate_avg_preprocess_time(data['pre_times']),
+        #     "Average inference time": metrics.calculate_avg_inference_time(data['inf_times']),
+        #     "Average postprocess time": metrics.calculate_avg_postprocess_time(data['post_times']),
+        #     "Average confidence score": metrics.calculate_avg_confidence(data['confs_list']),
+        #     "Average confidence for different labels": metrics.calculate_label_avg_confidences(data['labels_list'], data['confs_list']),
+        #     "Confidence distribution": metrics.calculate_confidence_distribution(data['confs_list']),
+        #     "Detection count distribution": metrics.calculate_detection_distribution(data['detections']),
+        #     "Category distribution": metrics.calculate_category_distribution(data['label_counts']),
+        #     "Category percentages": metrics.calculate_category_percentages(metrics.calculate_category_distribution(data['label_counts'])),
+        #     "Inference time distribution": metrics.calculate_inference_time_distribution(data['inf_times']),
+        #     "Preprocess time distribution": metrics.calculate_preprocess_time_distribution(data['pre_times']),
+        #     "Postprocess time distribution": metrics.calculate_postprocess_time_distribution(data['post_times']),
+        #     "Average box size": metrics.calculate_avg_box_size(data['bboxes_list'], data['orig_shapes']),
+        #     "Box size distribution": metrics.calculate_box_size_distribution(data['bboxes_list'], data['orig_shapes']),
+        #     "Average box proportion": metrics.calculate_avg_box_proportion(data['box_props']),
+        #     "Box proportion distribution": metrics.calculate_box_proportion_distribution(data['box_props'])
+        # }
 
-        # Send metrics to the server
-        send_metrics_to_server(stats, batch_id)
+        # # Send metrics to the server
+        # send_metrics_to_server(stats, batch_id)
 
     except Exception as e:
         print(f"Client error: {e}")
@@ -251,9 +205,9 @@ def run(quantize=False):
 if __name__ == "__main__":
     import argparse
 
-    # Add command-line argument for quantization
-    parser = argparse.ArgumentParser(description="Run the model client with optional quantization.")
+    parser = argparse.ArgumentParser(description="Run the model client.")
+    parser.add_argument("--model", type=str, choices=["yolo", "efficientnet"], default="yolo", help="Select the model to use.")
     parser.add_argument("--quantize", action="store_true", help="Quantize the model for lower energy consumption.")
     args = parser.parse_args()
 
-    run(quantize=args.quantize)
+    run(args.model, args.quantize)

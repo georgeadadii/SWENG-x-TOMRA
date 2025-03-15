@@ -8,3 +8,4 @@ strawberry-graphql[debug-server]
 fastapi[all]
 torch
 torchvision
+efficientnet-pytorch

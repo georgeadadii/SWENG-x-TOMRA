@@ -13,6 +13,20 @@ cache:
     - .cache/pip
     - venv/
 
+cleanup:
+  stage: cleanup
+  image: docker:latest  # Use the Docker CLI image
+  services:
+    - docker:dind  # Use Docker-in-Docker service
+  script:
+    - echo "Cleaning up Docker cache and unused objects..."
+    - docker system prune -f  # Remove unused Docker objects
+    - echo "Clearing the /cache directory..."
+    - rm -rf /cache/*
+    - df -h  # Check disk space after cleanup
+  tags:
+    - maven
+
 # Setup
 setup:
   stage: setup
@@ -56,14 +70,6 @@ frontend_test:
     - df -h 
     - echo "Clearing npm cache..."
     - npm cache clean --force
-    - echo "Removing temporary files..."
-    - ls -lah /cache
-    - rm -rf /tmp/*  
-    - rm -rf /cache/*  
-    - /usr/share/gitlab-runner/clear-docker-cache  
-    - echo "Running docker system prune..."
-    - docker system prune -f 
-    - df -h  
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."

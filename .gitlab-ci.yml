@@ -21,12 +21,12 @@ cleanup:
     - name: docker:dind
       alias: docker
   variables:
-    DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
-    - unset DOCKER_HOST
-    - docker system prune
-    - echo "Docker volume prune completed."
+    - echo "Running Docker system prune..."
+    - docker system prune --force
+    - echo "Docker system prune completed."
   tags:
     - maven
 

@@ -25,9 +25,6 @@ cleanup:
     DOCKER_TLS_CERTDIR: ""
   script:
     - unset DOCKER_HOST
-    - echo "Testing Docker connection..."
-    - docker info
-    - echo "Running Docker volume prune..."
     - docker volume prune --force
     - echo "Docker volume prune completed."
   tags:

@@ -60,7 +60,9 @@ frontend_test:
     - ls -lah /cache
     - rm -rf /tmp/*  
     - rm -rf /cache/*  
-    - docker rm `docker ps -aq`
+    - /usr/share/gitlab-runner/clear-docker-cache  
+    - echo "Running docker system prune..."
+    - docker system prune -f 
     - df -h  
   script:
     - cd frontend

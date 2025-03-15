@@ -1,5 +1,4 @@
 stages:
-  - cleanup
   - setup
   - test
   - build
@@ -14,21 +13,6 @@ cache:
     - .cache/pip
     - venv/
 
-cleanup:
-  stage: cleanup
-  image: docker:latest  # Use the Docker CLI image
-  services:
-    - docker:dind  # Use Docker-in-Docker service
-  variables:
-    DOCKER_HOST: tcp://docker:2375  # Connect to the Docker daemon
-    DOCKER_TLS_CERTDIR: ""  # Disable TLS for simplicity
-  script:
-    - echo "Clearing Docker cache..."
-    - docker system prune -f
-    - docker builder prune -f --all
-    - echo "Docker cache cleared."
-  tags:
-    - maven
 
 # Setup
 setup:

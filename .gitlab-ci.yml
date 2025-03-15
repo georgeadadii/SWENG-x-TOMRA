@@ -24,7 +24,11 @@ cleanup:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
+    - echo "Testing Docker connection..."
+    - docker info
+    - echo "Running Docker volume prune..."
     - docker volume prune --force
+    - echo "Docker volume prune completed."
     - df -h
   tags:
     - maven

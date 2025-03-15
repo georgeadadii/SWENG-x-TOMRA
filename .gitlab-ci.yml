@@ -16,12 +16,14 @@ cache:
 
 cleanup:
   stage: cleanup
-  image: docker:latest  # Use the Docker CLI image
+  image: docker:latest
   services:
-    - docker:dind  # Use Docker-in-Docker service
+    - name: docker:dind
+      command: ["--tls=false"]
   variables:
-    DOCKER_HOST: tcp://docker:2375  # Connect to the Docker daemon
-    DOCKER_TLS_CERTDIR: ""  # Disable TLS for simplicity
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   script:
     - echo "Clearing Docker cache..."
     - docker ps -a -q -f status=exited | xargs --no-run-if-empty docker rm -v

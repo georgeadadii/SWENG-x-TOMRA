@@ -19,6 +19,7 @@ test-job:
     - azure
   script:
     - echo "Hello from Azure VM Runner!"
+    - echo "testing runner"
 
 # Setup
 setup:

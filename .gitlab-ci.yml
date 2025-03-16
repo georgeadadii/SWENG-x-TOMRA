@@ -1,4 +1,5 @@
 stages:
+  - test-job
   - setup
   - test
   - build
@@ -12,6 +13,12 @@ cache:
   paths:
     - .cache/pip
     - venv/
+
+test-job:
+  tags:
+    - azure
+  script:
+    - echo "Hello from Azure VM Runner!"
 
 # Setup
 setup:

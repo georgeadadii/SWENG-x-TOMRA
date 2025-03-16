@@ -59,7 +59,7 @@ frontend_test:
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."
-    - npm ci
+    - npm install
     - df -h  # Check disk space
     - echo "Running frontend tests..."
     - npm run test -- --testPathPattern=src/tests
@@ -93,7 +93,7 @@ frontend_build:
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."
-    - npm ci
+    - npm install
     - echo "Building the Next.js application..."
     - npm run build &
     - sleep 5

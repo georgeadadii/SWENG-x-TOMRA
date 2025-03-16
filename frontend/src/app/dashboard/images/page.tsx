@@ -20,7 +20,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div>
       <h1 className="text-4xl font-bold mx-auto p-5">Gallery</h1>
-      <div className="container mx-auto p-5">
+      <div className="mx-auto p-5">
         <ImageClassificationFilter
           selectedLabels={selectedLabels}
           setSelectedLabels={handleSelectedLabelsChange}

@@ -94,7 +94,7 @@ export function ImageClassificationFilter({
 
   return (
     <div className="w-full max-w-7xl">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold mb-2">Image Classification Filters</h2>
           <p className="text-muted-foreground">Filter classification images based on various criteria.</p>

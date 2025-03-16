@@ -1,5 +1,4 @@
 stages:
-  - test-job
   - setup
   - test
   - build
@@ -15,6 +14,7 @@ cache:
     - venv/
 
 test-job:
+  stage: setup
   tags:
     - azure
   script:

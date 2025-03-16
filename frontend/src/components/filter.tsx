@@ -93,7 +93,7 @@ export function ImageClassificationFilter({
   //const [selectedLabels, setSelectedLabels] = useState<Option[]>([])
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto p-5">
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold mb-2">Image Classification Filters</h2>

@@ -6,7 +6,7 @@ import ImageGrid from "@/components/ImageGrid";
 import { MultiSelect, type Option } from "@/components/ui/multi-select";
 
 type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
-type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
+type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'| 'all';
 const DashboardPage: React.FC = () => {
 
   const [selectedLabels, setSelectedLabels] = useState<Option[]>([]);
@@ -19,7 +19,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8">Gallery</h1>
+      <h1 className="text-4xl font-bold mx-auto p-5">Gallery</h1>
       <div className="container mx-auto py-10">
         <ImageClassificationFilter
           selectedLabels={selectedLabels}

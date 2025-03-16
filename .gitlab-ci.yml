@@ -13,14 +13,6 @@ cache:
     - .cache/pip
     - venv/
 
-test-job:
-  stage: setup
-  tags:
-    - azure
-  script:
-    - echo "Hello from Azure VM Runner!"
-    - echo "testing runner"
-
 # Setup
 setup:
   stage: setup
@@ -54,23 +46,26 @@ backend_test:
     paths:
       - venv/
 
-# frontend_test:
-#   stage: test
-#   tags:
-#     - maven
-#   image: node:16
-#   before_script:
-#     - echo "Cleaning up disk space..."
-#     - df -h 
-#     - echo "Clearing npm cache..."
-#     - npm cache clean --force
-#   script:
-#     - cd frontend
-#     - echo "Installing frontend dependencies..."
-#     - npm ci
-#     - df -h  # Check disk space
-#     - echo "Running frontend tests..."
-#     - npm run test -- --testPathPattern=src/tests
+frontend_test:
+  stage: test
+  tags:
+    - azure  
+  image: node:16
+  before_script:
+    - echo "Cleaning up disk space..."
+    - df -h
+    - echo "Clearing npm cache..."
+    - npm cache clean --force
+  script:
+    - cd frontend
+    - echo "Installing frontend dependencies..."
+    - npm ci
+    - df -h  # Check disk space
+    - echo "Running frontend tests..."
+    - npm run test -- --testPathPattern=src/tests
+  cache:
+    paths:
+      - frontend/node_modules/
 
 # Building
 backend_build:
@@ -90,25 +85,28 @@ backend_build:
     paths:
       - venv/
 
-# frontend_build:
-#   stage: build
-#   tags:
-#     - maven
-#   image: node:16
-#   script:
-#     - cd frontend
-#     - echo "Installing frontend dependencies..."
-#     - npm ci
-#     - echo "Building the Next.js application..."
-#     - npm run build &  
-#     - sleep 5  
-#     - echo "Starting the Next.js server..."
-#     - npm run start &  
-#     - sleep 5  
-#     - echo "Build completed successfully."
-#   after_script:
-#     - echo "Cleaning up node_modules to free disk space..."
-#     - rm -rf frontend/node_modules/
-#   artifacts:
-#     paths:
-#       - frontend/.next/
+frontend_build:
+  stage: build
+  tags:
+    - azure 
+  image: node:16
+  script:
+    - cd frontend
+    - echo "Installing frontend dependencies..."
+    - npm ci
+    - echo "Building the Next.js application..."
+    - npm run build &
+    - sleep 5
+    - echo "Starting the Next.js server..."
+    - npm run start &
+    - sleep 5
+    - echo "Build completed successfully."
+  after_script:
+    - echo "Cleaning up node_modules to free disk space..."
+    - rm -rf frontend/node_modules/
+  artifacts:
+    paths:
+      - frontend/.next/
+  cache:
+    paths:
+      - frontend/node_modules/

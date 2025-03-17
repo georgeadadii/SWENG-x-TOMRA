@@ -6,3 +6,4 @@ received_image.*
 .DS_Store
 venv/
 **/venv/
+.env

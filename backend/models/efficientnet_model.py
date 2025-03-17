@@ -32,8 +32,10 @@ class EfficientNetClassifier(BaseModel):
 
     def process_image(self, image_path):
         """Classify an image and return the top label and confidence."""
-        start_preprocess = time.time()
         image = Image.open(image_path).convert("RGB")
+        orig_shape = image.size
+
+        start_preprocess = time.time()
         input_tensor = self.preprocess(image)
         input_batch = input_tensor.unsqueeze(0)
         preprocess_time = time.time() - start_preprocess 
@@ -57,6 +59,8 @@ class EfficientNetClassifier(BaseModel):
         [preprocess_time],           # preprocess_times
         [inference_time],            # inference_times
         [postprocess_time],          # postprocess_times
+        [""],
+        orig_shape,
         self.get_task_type()         # task_type
     )
 

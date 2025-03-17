@@ -8,25 +8,38 @@ import logging
 import requests
 import uuid
 from azure.cosmos import CosmosClient
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path("..") / ".env"  # Go up one level to the root directory
+load_dotenv(dotenv_path=env_path)
 
 
 class ModelService(model_service_pb2_grpc.ModelServiceServicer):
     def __init__(self):
         # Initialize the Neo4j Service client
         self.neo4j_channel = grpc.insecure_channel("localhost:50052")
-        self.neo4j_stub = neo4j_service_pb2_grpc.Neo4jServiceStub(self.neo4j_channel)
+        self.neo4j_stub = neo4j_service_pb2_grpc.Neo4jServiceStub(
+            self.neo4j_channel)
 
-        COSMOS_ENDPOINT = "https://metrics-db.documents.azure.com:443/"
-        COSMOS_KEY = "UExPfUANG2HPUz6DPff5e941IJ6vBSNMDVa5Djn8LGRKrMChcDH3rs7XPFTjqWwMkZc6zayXWjGcACDbHXtn4w=="
-        DATABASE_NAME = "metrics-database"
-        CONTAINER_NAME = "metrics-container"
+        COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")
+        COSMOS_KEY = os.getenv("COSMOS_KEY")
+        DATABASE_NAME = os.getenv("DATABASE_NAME")
+        CONTAINER_NAME = os.getenv("CONTAINER_NAME")
+
+        if not all([COSMOS_ENDPOINT, COSMOS_KEY, DATABASE_NAME, CONTAINER_NAME]):
+            raise ValueError("Missing one or more required environment variables.")
 
         COSMOS_CONN_STR = f"AccountEndpoint={COSMOS_ENDPOINT};AccountKey={COSMOS_KEY};"
 
         try:
-            self.cosmos_client = CosmosClient.from_connection_string(COSMOS_CONN_STR)
-            self.cosmos_db = self.cosmos_client.get_database_client(DATABASE_NAME)
-            self.cosmos_container = self.cosmos_db.get_container_client(CONTAINER_NAME)
+            self.cosmos_client = CosmosClient.from_connection_string(
+                COSMOS_CONN_STR)
+            self.cosmos_db = self.cosmos_client.get_database_client(
+                DATABASE_NAME)
+            self.cosmos_container = self.cosmos_db.get_container_client(
+                CONTAINER_NAME)
         except Exception as e:
             print(f"Cosmos DB failed: {str(e)}")
             raise
@@ -36,20 +49,20 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         try:
             for request in request_iterator:
                 print("Received image and results from client.")
-    
+
                 # Log class labels and confidences
                 for label, confidence in zip(request.class_labels, request.confidences):
                     print(f"Class: {label}, Confidence: {confidence}")
-    
+
                 # Process results, skipping image download
                 image_url = request.image_url
                 print(f"Processing metadata for image with URL: {image_url}")
-    
+
                 success = True
                 try:
                     if not (len(request.class_labels) == len(request.confidences) == len(request.bbox_coordinates)):
                         raise ValueError("Mismatched list lengths in request.")
-    
+
                     for label, confidence, bbox in zip(request.class_labels, request.confidences, request.bbox_coordinates):
                         neo4j_request = neo4j_service_pb2.ClassificationResult(
                             class_label=label,
@@ -59,21 +72,22 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                             task_type=request.task_type,
                             bbox_coordinates=bbox
                         )
-    
+
                         try:
-                            neo4j_response = self.neo4j_stub.StoreResult(iter([neo4j_request]))
+                            neo4j_response = self.neo4j_stub.StoreResult(
+                                iter([neo4j_request]))
                             for res in neo4j_response:
                                 if not res.success:
                                     print("Neo4j StoreResult failed")
                                     success = False
                         except grpc.RpcError as e:
-                            print(f"Neo4j gRPC Error: {e.code()} - {e.details()}")
+                            print(
+                                f"Neo4j gRPC Error: {e.code()} - {e.details()}")
                             context.set_code(e.code())
                             context.set_details(e.details())
                             return  # Stop processing this request
 
-                    cosmos_item = {
-                        "id": str(uuid.uuid4()),
+                    metrics_data = {
                         "image_url": request.image_url,
                         "top_label": list(request.class_labels)[0] if request.class_labels else "",
                         "labels": list(request.class_labels),
@@ -84,29 +98,30 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                         "bbox_coordinates": list(request.bbox_coordinates),
                         "box_proportions": list(request.box_proportions)
                     }
-                    self.cosmos_container.create_item(cosmos_item)
-    
+
+                    if not self.store_metrics_in_cosmos(metrics_data):
+                        success = False
+
                 except Exception as e:
                     print(f"Unexpected error when processing request: {e}")
                     context.set_code(grpc.StatusCode.INTERNAL)
                     context.set_details(str(e))
                     return
-    
+
                 yield model_service_pb2.ResultsResponse(
                     success=success,
                     message="Results stored successfully." if success else "Some issues encountered."
                 )
-    
+
         except Exception as e:
             print(f"Unexpected error in StoreResults: {e}")
             context.set_code(grpc.StatusCode.UNKNOWN)
             context.set_details(f"Server Error: {str(e)}")
             yield model_service_pb2.ResultsResponse(success=False, message=f"Server error: {str(e)}")
-    
+
         finally:
             print("StoreResults iterator fully consumed.")
 
-    
     def StoreMetrics(self, request, context):
         try:
             print("Received metrics from client.")
@@ -134,20 +149,62 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 postprocess_time_distribution=request.postprocess_time_distribution,
                 batch_id=request.batch_id
             )
-            neo4j_response = self.neo4j_stub.StoreMetrics(neo4j_metrics_request)
+            neo4j_response = self.neo4j_stub.StoreMetrics(
+                neo4j_metrics_request)
             print("Neo4j StoreMetrics response:", neo4j_response.success)
             return model_service_pb2.MetricsResponse(success=True, message="Metrics stored successfully in Neo4j")
         except Exception as e:
             return model_service_pb2.MetricsResponse(success=False, message=f"Error storing metrics: {str(e)}")
 
+    def store_metrics_in_cosmos(self, metrics_data):
+        """
+        Stores metrics data for an image in Cosmos DB.
+        Args: metrics_data (dict): A dictionary containing metrics data for an image.
+        Returns: bool: True if the metrics were successfully stored, False otherwise.
+        """
+        try:
+            # Ensure the metrics_data dictionary has the required fields
+            required_fields = [
+                "image_url", "top_label", "labels", "confidences", "preprocessing_time",
+                "inference_time", "postprocessing_time", "bbox_coordinates", "box_proportions"
+            ]
+            for field in required_fields:
+                if field not in metrics_data:
+                    raise ValueError(f"Missing required field: {field}")
+
+            # Create a Cosmos DB item
+            cosmos_item = {
+                "id": str(uuid.uuid4()),
+                "image_url": metrics_data["image_url"],
+                "top_label": metrics_data["top_label"],
+                "labels": metrics_data["labels"],
+                "confidences": metrics_data["confidences"],
+                "preprocessing_time": metrics_data["preprocessing_time"],
+                "inference_time": metrics_data["inference_time"],
+                "postprocessing_time": metrics_data["postprocessing_time"],
+                "bbox_coordinates": metrics_data["bbox_coordinates"],
+                "box_proportions": metrics_data["box_proportions"]
+            }
+
+            self.cosmos_container.create_item(cosmos_item)
+            print(
+                f"Metrics stored successfully for image: {metrics_data['image_url']}")
+            return True
+
+        except Exception as e:
+            print(f"Error storing metrics in Cosmos DB: {str(e)}")
+            return False
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    model_service_pb2_grpc.add_ModelServiceServicer_to_server(ModelService(), server)
+    model_service_pb2_grpc.add_ModelServiceServicer_to_server(
+        ModelService(), server)
     server.add_insecure_port("[::]:50051")
     print("Server started, listening on [::]:50051")
     server.start()
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     serve()

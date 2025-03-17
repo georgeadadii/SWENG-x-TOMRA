@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from unittest.mock import MagicMock, patch
-with patch.dict('sys.modules', {'azure.cosmos': MagicMock()}):
+with patch.dict('sys.modules', {'azure.cosmos': MagicMock(), 'efficientnet_pytorch': MagicMock()}):
     from model_service import ModelService
 
 import pytest

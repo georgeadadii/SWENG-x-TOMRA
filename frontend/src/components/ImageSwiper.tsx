@@ -1,6 +1,6 @@
 "use client"
 
-import { gql, useQuery } from "@apollo/client"
+import { gql, useQuery, useMutation } from "@apollo/client"
 import client from "@/lib/apolloClient"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,6 +11,9 @@ interface ImageData {
   imageUrl: string
   classLabel: string
   confidence: number
+  classified: boolean
+  misclassified: boolean
+  reviewed?: boolean
 }
 
 const GET_IMAGES = gql`
@@ -19,39 +22,81 @@ const GET_IMAGES = gql`
       imageUrl
       classLabel
       confidence
+      classified
+      misclassified
+      reviewed
     }
   }
 `
 
+const STORE_FEEDBACK = gql`
+  mutation StoreFeedback(
+    $imageUrl: String!
+    $classified: Boolean
+    $misclassified: Boolean
+    $reviewed: Boolean
+  ) {
+    storeFeedback(
+      imageUrl: $imageUrl
+      classified: $classified
+      misclassified: $misclassified
+      reviewed: $reviewed
+    )
+  }
+`
+
 export default function ImageSwiper() {
-  const { data, loading, error } = useQuery<{ results?: ImageData[] }>(GET_IMAGES, { client })
+  const { data, loading, error, refetch } = useQuery<{ results?: ImageData[] }>(GET_IMAGES, {
+    client,
+    onError: (err) => console.error("❌ GraphQL Query Error:", err),
+  })
+
+  const [storeFeedback] = useMutation(STORE_FEEDBACK, {
+    client,
+    onError: (err) => console.error("❌ Mutation Error:", err),
+  })
+
   const [direction, setDirection] = useState<"left" | "right" | null>(null)
   const [images, setImages] = useState<ImageData[]>([])
   const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   useEffect(() => {
+    console.log("🚀 GraphQL Data Loaded:", data)
+
     if (data?.results) {
-      setImages(data.results)
+      const unreviewed = data.results.filter((img) => img.reviewed !== true)
+      console.log("✅ Unreviewed Images:", unreviewed)
+      setImages(unreviewed)
     }
   }, [data])
 
-  const handleSwipe = (swipeDirection: "left" | "right") => {
+  const handleSwipe = async (swipeDirection: "left" | "right") => {
     if (images.length === 0) return
 
-    setDirection(swipeDirection)
+    const currentImage = images[0]
+    console.log(`🖼 Swiping ${swipeDirection} →`, currentImage)
+
+    const classified = swipeDirection === "right"
+    const misclassified = swipeDirection === "left"
+
+    try {
+      const response = await storeFeedback({
+        variables: {
+          imageUrl: currentImage.imageUrl,
+          classified,
+          misclassified,
+          reviewed: true,
+        },
+      })
+      console.log("✅ Feedback stored:", response.data)
+    } catch (err) {
+      console.error("❌ Failed to store feedback:", err)
+    }
 
     setTimeout(() => {
       setDirection(null)
-
-      setImages((prevImages) => {
-        if (prevImages.length > 1) {
-          return prevImages.slice(1)
-        } else {
-          return []
-        }
-      })
-
-      setActiveImageIndex((prevIndex) => prevIndex + 1)
+      setImages((prev) => (prev.length > 1 ? prev.slice(1) : []))
+      setActiveImageIndex((prev) => prev + 1)
     }, 400)
   }
 
@@ -76,7 +121,6 @@ export default function ImageSwiper() {
 
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-40">
-          {/* <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div> */}
           <div role="status" className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
         </div>
       )}
@@ -89,17 +133,15 @@ export default function ImageSwiper() {
           variant="outline"
           className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
         >
-          {/* <ChevronLeft className="h-6 w-6" /> */}
           <ChevronLeft aria-label="chevron-left" className="h-6 w-6" />
-
         </Button>
 
         <div className="relative w-[300px] h-[400px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
           {images.length === 0 && !loading ? (
-            <p className="text-gray-500 text-lg">No images available</p>
+            <p className="text-gray-500 text-lg">🎉 All images reviewed!</p>
           ) : (
             <AnimatePresence>
-              {images.slice(0, 1).map((image, index) => (
+              {images.slice(0, 1).map((image) => (
                 <motion.div
                   key={`${image.imageUrl}-${activeImageIndex}`}
                   className="absolute w-full h-full overflow-hidden rounded-xl"
@@ -129,7 +171,9 @@ export default function ImageSwiper() {
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                     <p className="text-white text-lg font-bold">{image.classLabel}</p>
-                    <p className="text-gray-300 text-sm">Confidence: {(image.confidence * 100).toFixed(2)}%</p>
+                    <p className="text-gray-300 text-sm">
+                      Confidence: {(image.confidence * 100).toFixed(2)}%
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -144,12 +188,9 @@ export default function ImageSwiper() {
           variant="outline"
           className="ml-4 transition-all duration-300 ease-in-out hover:bg-green-50 hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]"
         >
-          {/* <ChevronRight className="h-6 w-6" /> */}
           <ChevronRight aria-label="chevron-right" className="h-6 w-6" />
-
         </Button>
       </div>
     </div>
   )
 }
-

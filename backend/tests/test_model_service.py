@@ -11,9 +11,23 @@ import requests
 @pytest.fixture
 def model_service():
     """Fixture to create a ModelService instance with a mocked Neo4jService."""
-    model_service = ModelService()
-    model_service.neo4j_stub = MagicMock()
-    return model_service
+    with patch("model_service.CosmosClient") as mock_cosmos:
+        # Mock the CosmosClient instance and methods
+        mock_cosmos_instance = MagicMock()
+        mock_db_client = MagicMock()
+        mock_container_client = MagicMock()
+
+        # Setup mock return values
+        mock_cosmos.from_connection_string.return_value = mock_cosmos_instance
+        mock_cosmos_instance.get_database_client.return_value = mock_db_client
+        mock_db_client.get_container_client.return_value = mock_container_client
+
+        # Prevent actual DB calls
+        mock_container_client.create_item.return_value = None
+
+        model_service = ModelService()
+        model_service.neo4j_stub = MagicMock()  # Mock Neo4j service
+        return model_service
 
 @patch("requests.get") 
 def test_store_results(mock_get, model_service):
@@ -52,3 +66,5 @@ def test_store_results(mock_get, model_service):
 
     # Verify the Neo4jService is called
     assert model_service.neo4j_stub.StoreResult.call_count == 2  # Should be called once per request batch
+
+    model_service.cosmos_container.create_item.assert_called()

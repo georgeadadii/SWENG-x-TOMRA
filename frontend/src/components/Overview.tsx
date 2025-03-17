@@ -96,7 +96,7 @@ export default function Overview() {
                     </div>
                 </CardContent>
             </Card>
-            <Card className="w-[1000px]">
+            <Card className="w-[800px]">
                 <CardHeader>
                     <CardTitle>Average Time Performance</CardTitle>
                 </CardHeader>

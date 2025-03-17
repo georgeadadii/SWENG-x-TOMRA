@@ -8,6 +8,9 @@ from model_service_pb2 import ResultsRequest, ResultsResponse
 from model_service import ModelService
 import requests
 
+
+sys.modules["azure.cosmos"] = MagicMock()
+
 @pytest.fixture
 def model_service():
     """Fixture to create a ModelService instance with a mocked Neo4jService."""
@@ -29,7 +32,7 @@ def model_service():
         model_service.neo4j_stub = MagicMock()  # Mock Neo4j service
         return model_service
 
-@patch("requests.get") 
+@patch("requests.get")
 def test_store_results(mock_get, model_service):
     """Test storing results in the ModelService with a mocked Neo4jService."""
 
@@ -37,7 +40,7 @@ def test_store_results(mock_get, model_service):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.content = b"fake image data"
-    mock_get.return_value = mock_response 
+    mock_get.return_value = mock_response
 
     # Mock the Neo4jService response as a generator (to simulate streaming)
     def mock_neo4j_stream(request_iterator):

@@ -76,12 +76,21 @@ def process_image(image_path, model, quantize=False):
     return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
 
 
-def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, retries=3, delay=2):
+def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type,pre_times,inf_times,post_times,box_props,retries=3,delay=2):
     """Send a stream of image results to the gRPC server with retry logic."""
     
     # Create a generator to stream multiple requests
     def request_generator():
-        for image_url, labels, confs, bboxes in zip(image_urls, labels_list, confs_list, bboxes_list):
+        for image_url, labels, confs, bboxes, pre_time, inf_time, post_time, box_prop in zip(
+            image_urls,
+            labels_list,
+            confs_list,
+            bboxes_list,
+            pre_times,
+            inf_times,
+            post_times,
+            box_props
+        ):
             bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
             yield model_service_pb2.ResultsRequest(
                 image_url=image_url,
@@ -89,7 +98,11 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
                 confidences=confs,
                 batch_id=batch_id,
                 task_type=task_type,
-                bbox_coordinates=bbox_coords
+                bbox_coordinates=bbox_coords,
+                preprocessing_time=pre_time,
+                inference_time=inf_time,
+                postprocessing_time=post_time,
+                box_proportions=box_prop
             )
 
     with grpc.insecure_channel("localhost:50051") as channel:
@@ -213,8 +226,13 @@ def run(quantize=False):
             data['image_urls'],  
             data['labels_list'],  
             data['confs_list'],  
-            data['bboxes_list'], 
-            batch_id, task_type
+            data['bboxes_list'],
+            batch_id,
+            task_type,
+            data['pre_times'],
+            data['inf_times'],
+            data['post_times'],
+            data['box_props']
         )
         # Now, calculate and send the metrics
         stats = {

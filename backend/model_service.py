@@ -6,6 +6,8 @@ import neo4j_service_pb2
 import neo4j_service_pb2_grpc
 import logging
 import requests
+import uuid
+from azure.cosmos import CosmosClient
 
 
 class ModelService(model_service_pb2_grpc.ModelServiceServicer):
@@ -14,6 +16,20 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         self.neo4j_channel = grpc.insecure_channel("localhost:50052")
         self.neo4j_stub = neo4j_service_pb2_grpc.Neo4jServiceStub(self.neo4j_channel)
 
+        COSMOS_ENDPOINT = "https://metrics-db.documents.azure.com:443/"
+        COSMOS_KEY = "UExPfUANG2HPUz6DPff5e941IJ6vBSNMDVa5Djn8LGRKrMChcDH3rs7XPFTjqWwMkZc6zayXWjGcACDbHXtn4w=="
+        DATABASE_NAME = "metrics-database"
+        CONTAINER_NAME = "metrics-container"
+
+        COSMOS_CONN_STR = f"AccountEndpoint={COSMOS_ENDPOINT};AccountKey={COSMOS_KEY};"
+
+        try:
+            self.cosmos_client = CosmosClient.from_connection_string(COSMOS_CONN_STR)
+            self.cosmos_db = self.cosmos_client.get_database_client(DATABASE_NAME)
+            self.cosmos_container = self.cosmos_db.get_container_client(CONTAINER_NAME)
+        except Exception as e:
+            print(f"Cosmos DB failed: {str(e)}")
+            raise
 
     def StoreResults(self, request_iterator, context):
         """Handles a stream of classification results, stores them, and streams responses."""
@@ -55,6 +71,20 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                             context.set_code(e.code())
                             context.set_details(e.details())
                             return  # Stop processing this request
+
+                    cosmos_item = {
+                        "id": str(uuid.uuid4()),
+                        "image_url": request.image_url,
+                        "top_label": list(request.class_labels)[0] if request.class_labels else "",
+                        "labels": list(request.class_labels),
+                        "confidences": list(request.confidences),
+                        "preprocessing_time": request.preprocessing_time,
+                        "inference_time": request.inference_time,
+                        "postprocessing_time": request.postprocessing_time,
+                        "bbox_coordinates": list(request.bbox_coordinates),
+                        "box_proportions": list(request.box_proportions)
+                    }
+                    self.cosmos_container.create_item(cosmos_item)
     
                 except Exception as e:
                     print(f"Unexpected error when processing request: {e}")

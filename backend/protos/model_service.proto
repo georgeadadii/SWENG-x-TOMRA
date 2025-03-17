@@ -12,6 +12,10 @@ message ResultsRequest {
   string batch_id = 4;
   string task_type = 5;
   repeated string bbox_coordinates = 6;
+  float preprocessing_time = 7;
+  float inference_time = 8;
+  float postprocessing_time = 9;
+  repeated float box_proportions = 10;
 }
 
 message ResultsResponse {

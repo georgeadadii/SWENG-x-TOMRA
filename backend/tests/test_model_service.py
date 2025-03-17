@@ -1,12 +1,16 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import pytest
+
 from unittest.mock import MagicMock, patch
+with patch.dict('sys.modules', {'azure.cosmos': MagicMock()}):
+    from model_service import ModelService
+
+import pytest
 import grpc
 from model_service_pb2 import ResultsRequest, ResultsResponse
-from model_service import ModelService
 import requests
+
 
 @pytest.fixture
 def model_service():
@@ -15,7 +19,7 @@ def model_service():
     model_service.neo4j_stub = MagicMock()
     return model_service
 
-@patch("requests.get") 
+@patch("requests.get")
 def test_store_results(mock_get, model_service):
     """Test storing results in the ModelService with a mocked Neo4jService."""
 
@@ -23,7 +27,7 @@ def test_store_results(mock_get, model_service):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.content = b"fake image data"
-    mock_get.return_value = mock_response 
+    mock_get.return_value = mock_response
 
     # Mock the Neo4jService response as a generator (to simulate streaming)
     def mock_neo4j_stream(request_iterator):

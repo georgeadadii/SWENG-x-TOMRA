@@ -1,15 +1,16 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import pytest
+
 from unittest.mock import MagicMock, patch
+with patch.dict('sys.modules', {'azure.cosmos': MagicMock()}):
+    from model_service import ModelService
+
+import pytest
 import grpc
 from model_service_pb2 import ResultsRequest, ResultsResponse
-from model_service import ModelService
 import requests
 
-
-sys.modules["azure.cosmos"] = MagicMock()
 
 @pytest.fixture
 def model_service():

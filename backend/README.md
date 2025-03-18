@@ -1,6 +1,20 @@
 ## Make sure to run `pip install -r requirements.txt` to install the required Python packages
 
-## You must also set up Neo4j:
+## Setting Up Environment Variables
+
+1. Create a `.env` file in the root directory of the project.
+2. Copy the contents of `.env.example` into `.env`.
+3. Replace the placeholder values in `.env` with your actual credentials, these can be found in the secrets protected branch on gitlab.
+
+Example:
+```plaintext
+COSMOS_ENDPOINT=https://your-cosmos-endpoint.com:123/
+COSMOS_KEY=your_cosmos_key_here
+DATABASE_NAME=your_database_name_here
+CONTAINER_NAME=your_container_name_here
+```
+
+## To set up Neo4j locally:
 
     Install Neo4j Desktop and create a new project.
 

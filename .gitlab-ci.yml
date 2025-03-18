@@ -49,12 +49,18 @@ backend_test:
 frontend_test:
   stage: test
   tags:
-    - maven
+    - azure  
   image: node:16
+  before_script:
+    - echo "Cleaning up disk space..."
+    - df -h
+    - echo "Clearing npm cache..."
+    - npm cache clean --force
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."
     - npm install
+    - df -h  # Check disk space
     - echo "Running frontend tests..."
     - npm run test -- --testPathPattern=src/tests
   cache:
@@ -82,19 +88,25 @@ backend_build:
 frontend_build:
   stage: build
   tags:
-    - maven
+    - azure 
   image: node:16
   script:
     - cd frontend
     - echo "Installing frontend dependencies..."
     - npm install
     - echo "Building the Next.js application..."
-    - npm run build &  
-    - sleep 5  
+    - npm run build &
+    - sleep 5
     - echo "Starting the Next.js server..."
-    - npm run start &  
-    - sleep 5  
+    - npm run start &
+    - sleep 5
     - echo "Build completed successfully."
+  after_script:
+    - echo "Cleaning up node_modules to free disk space..."
+    - rm -rf frontend/node_modules/
   artifacts:
     paths:
       - frontend/.next/
+  cache:
+    paths:
+      - frontend/node_modules/

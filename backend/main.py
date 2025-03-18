@@ -85,7 +85,7 @@ def get_results() -> List[ResultType]:
                 a.created_at AS created_at
             
             UNION
-            
+
             MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
             MATCH (i)-[:HAS_CLASSIFICATION]->(ca:ClassificationAnnotation)-[:HAS_LABEL]->(l:Label)
             RETURN l.name AS class_label, 

@@ -1,6 +1,20 @@
 ## Make sure to run `pip install -r requirements.txt` to install the required Python packages
 
-## You must also set up Neo4j:
+## Setting Up Environment Variables
+
+1. Create a `.env` file in the root directory of the project.
+2. Copy the contents of `.env.example` into `.env`.
+3. Replace the placeholder values in `.env` with your actual credentials, these can be found in the secrets protected branch on gitlab.
+
+Example:
+```plaintext
+COSMOS_ENDPOINT=https://your-cosmos-endpoint.com:123/
+COSMOS_KEY=your_cosmos_key_here
+DATABASE_NAME=your_database_name_here
+CONTAINER_NAME=your_container_name_here
+```
+
+## To set up Neo4j locally:
 
     Install Neo4j Desktop and create a new project.
 
@@ -23,6 +37,41 @@
     `python model_client.py` in seperate terminals.
 
     Some images for the model_service are already provided in \unprocessed_images\
+
+## Additional Models
+
+This system allows users to choose between different machine learning models for image processing. Currently, two models are supported:
+
+- YOLO (You Only Look Once): A state-of-the-art object detection model.
+
+- EfficientNet: A lightweight and efficient image classification model.
+
+Users can specify the model they want to use by passing the `--model` argument with either yolo or efficientnet.
+
+### How to Select Models
+
+To use the feature, run the `model_client` script with the `--model` argument to specify the model (yolo or efficientnet):
+
+
+```bash
+python model_client.py --model yolo
+```
+or
+```bash
+python model_client.py --model efficientnet
+```
+
+### Adding New Models
+
+To add a new model:
+
+1. Create a new model class in the models/ directory (e.g., `new_model.py`).
+
+2. Implement the required methods (e.g., `process_image`).
+
+3. Update the ModelFactory class in model_factory.py to include the new model.
+
+4. Add the model to the --model argument options in `model_client.py`.
 
 ## Model Quantization for Green Computing
 

@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from fastapi import FastAPI
 import strawberry
+from datetime import datetime
 from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,7 @@ class ResultType:
     classified: bool
     misclassified: bool
     reviewed: bool
+    created_at: datetime
 
 # Define a GraphQL type for the Metrics data
 @strawberry.type
@@ -79,8 +81,9 @@ def get_results() -> List[ResultType]:
                 i.image_url AS image_url,
                 a.classified AS classified,
                 a.misclassified AS misclassified,
-                a.reviewed AS reviewed
-
+                a.reviewed AS reviewed,
+                a.created_at AS created_at
+            
             UNION
 
             MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
@@ -90,7 +93,8 @@ def get_results() -> List[ResultType]:
                 i.image_url AS image_url,
                 a.classified AS classified,
                 a.misclassified AS misclassified,
-                a.reviewed AS reviewed
+                a.reviewed AS reviewed,
+                a.created_at AS created_at
             """
         )
         return [
@@ -100,7 +104,8 @@ def get_results() -> List[ResultType]:
                 image_url=record["image_url"],
                 classified=record["classified"],
                 misclassified=record["misclassified"],
-                reviewed=record["reviewed"]
+                reviewed=record["reviewed"],
+                created_at=record["created_at"]
             ) 
             for record in result
         ]

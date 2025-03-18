@@ -5,7 +5,7 @@ import ImageClassificationMetrics from "@/components/image-classification-metric
 const Metrics: React.FC = () => {
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-8">Image Classification Metrics</h1>
+      <h1 className="text-4xl font-bold mx-auto p-5">Image Classification Metrics</h1>
       <ImageClassificationMetrics />
     </div>
   );

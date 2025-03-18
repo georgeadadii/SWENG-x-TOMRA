@@ -24,7 +24,7 @@ setup:
     - pip install virtualenv
     - virtualenv venv
     - source venv/bin/activate
-    - pip install -r <(grep -v -E "torch|torchvision|ultralytics" $BACKEND_DIR/requirements.txt)
+    - pip install -r <(grep -v -E "torch|torchvision|ultralytics|azure\.cosmos" $BACKEND_DIR/requirements.txt)
   artifacts:
     paths:
       - venv/

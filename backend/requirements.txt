@@ -9,3 +9,4 @@ fastapi[all]
 torch
 torchvision
 efficientnet-pytorch
+azure.cosmos

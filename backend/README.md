@@ -51,13 +51,13 @@ python main.py --model efficientnet --image path/to/your/image.jpg
 
 To add a new model:
 
-1. Create a new model class in the models/ directory (e.g., new_model.py).
+1. Create a new model class in the models/ directory (e.g., `new_model.py`).
 
-2. Implement the required methods (e.g., process_image).
+2. Implement the required methods (e.g., `process_image`).
 
 3. Update the ModelFactory class in model_factory.py to include the new model.
 
-4. Add the model to the --model argument options in main.py.
+4. Add the model to the --model argument options in `model_client.py`.
 
 ## Model Quantization for Green Computing
 

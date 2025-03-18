@@ -44,7 +44,7 @@ python model_client.py --model yolo
 ```
 or
 ```bash
-python main.py --model efficientnet --image path/to/your/image.jpg
+python model_client.py --model efficientnet
 ```
 
 ### Adding New Models

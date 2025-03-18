@@ -38,6 +38,41 @@ CONTAINER_NAME=your_container_name_here
 
     Some images for the model_service are already provided in \unprocessed_images\
 
+## Additional Models
+
+This system allows users to choose between different machine learning models for image processing. Currently, two models are supported:
+
+- YOLO (You Only Look Once): A state-of-the-art object detection model.
+
+- EfficientNet: A lightweight and efficient image classification model.
+
+Users can specify the model they want to use by passing the `--model` argument with either yolo or efficientnet.
+
+### How to Select Models
+
+To use the feature, run the `model_client` script with the `--model` argument to specify the model (yolo or efficientnet):
+
+
+```bash
+python model_client.py --model yolo
+```
+or
+```bash
+python model_client.py --model efficientnet
+```
+
+### Adding New Models
+
+To add a new model:
+
+1. Create a new model class in the models/ directory (e.g., `new_model.py`).
+
+2. Implement the required methods (e.g., `process_image`).
+
+3. Update the ModelFactory class in model_factory.py to include the new model.
+
+4. Add the model to the --model argument options in `model_client.py`.
+
 ## Model Quantization for Green Computing
 
 Quantization reduces the precision of the model's weights from 32-bit floating point to 8-bit integers. This can significantly reduce memory usage, computational requirements, and energy consumption.

@@ -12,18 +12,10 @@ import time
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
+from models.model_factory import ModelFactory
 
 AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
 CONTAINER_NAME = "sweng25group06cont"
-
-class YOLOv11:
-    def __init__(self, model_path):
-        self.model = YOLO(model_path)
-        self.task_type = "object_detection" 
-
-    def get_task_type(self):
-        return self.task_type
-    
 
 def upload_to_azure(image_path):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
@@ -37,61 +29,22 @@ def upload_to_azure(image_path):
 
     return image_url 
 
-
-def quantize_model(model):
-    """Quantize the YOLO model for lower energy consumption."""
-    print("Quantizing model...")
-    # Quantize the model dynamically (weights only)
-    quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
-    return quantized_model 
-
-
 def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
 
-    preprocess_times = []
-    inference_times = []
-    postprocess_times = []
+    return model.process_image(image_path)
 
-    results = model.model(image_path, verbose=False)
-    boxes = results[0].boxes
-    speed_info = results[0].speed
-    orig_shape = results[0].orig_shape
-
-    preprocess_times.append(speed_info["preprocess"])
-    inference_times.append(speed_info["inference"])
-    postprocess_times.append(speed_info["postprocess"])
-
-    bboxes = boxes.xyxy.tolist() if boxes.xyxy is not None else []
-    confs = boxes.conf.tolist() if boxes.conf is not None else []
-    class_ids = boxes.cls.tolist() if boxes.cls is not None else []
-    labels = [results[0].names[int(cls)] for cls in class_ids] if class_ids else []
-
-    width, height = orig_shape[1], orig_shape[0]
-    box_proportions = []
-    for x1, y1, x2, y2 in bboxes:
-        box_area = (x2 - x1) * (y2 - y1)
-        proportion = box_area / (width * height)
-        box_proportions.append(round(proportion, 4))
-    return labels, confs, bboxes, preprocess_times, inference_times, postprocess_times, box_proportions, orig_shape, model.get_task_type()
-
-
-def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type,pre_times,inf_times,post_times,box_props,retries=3,delay=2):
+def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, pre_times, inf_times, post_times, box_props, retries=3, delay=2):
     """Send a stream of image results to the gRPC server with retry logic."""
     
     # Create a generator to stream multiple requests
     def request_generator():
-        for image_url, labels, confs, bboxes, pre_time, inf_time, post_time, box_prop in zip(
-            image_urls,
-            labels_list,
-            confs_list,
-            bboxes_list,
-            pre_times,
-            inf_times,
-            post_times,
-            box_props
-        ):
-            bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
+        for image_url, labels, confs, bboxes, pre_time, inf_time, post_time, box_prop in zip(image_urls, labels_list, confs_list, bboxes_list, pre_times, inf_times, post_times, box_props):
+            if task_type == "image_classification":
+                bbox_coords = ["0,0,0,0"] 
+                box_prop = [0]
+            else:
+                bbox_coords = [f"{x1},{y1},{x2},{y2}" for x1, y1, x2, y2 in bboxes]
             yield model_service_pb2.ResultsRequest(
                 image_url=image_url,
                 class_labels=labels,
@@ -133,7 +86,6 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
 
         print("Max retries reached, operation failed.")
 
-
 def send_metrics_to_server(metrics, batch_id):
     """Send computed metrics to the gRPC server."""
     with grpc.insecure_channel("localhost:50051") as channel:
@@ -165,15 +117,9 @@ def send_metrics_to_server(metrics, batch_id):
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
 
-
-def run(quantize=False):
+def run(model_name, quantize=False):
     try:
-        # Initialize the model
-        model = YOLOv11("yolo11n.pt")  
-
-        # Quantize the model if requested
-        if quantize:
-            model.model = quantize_model(model.model)
+        model = ModelFactory.create_model(model_name, quantize)
 
         # Path to the folder containing unprocessed images
         unprocessed_folder_path = "unprocessed_images"
@@ -221,19 +167,23 @@ def run(quantize=False):
             data['box_props'].append(proportions)
             data['orig_shapes'].append(orig_shape)
 
+
         # After all images are processed, send the results to the server in a stream
         send_results_to_server(
             data['image_urls'],  
             data['labels_list'],  
             data['confs_list'],  
-            data['bboxes_list'],
-            batch_id,
+            data['bboxes_list'], 
+            batch_id, 
             task_type,
             data['pre_times'],
             data['inf_times'],
             data['post_times'],
             data['box_props']
         )
+
+        print("pre_times:",data['pre_times'])
+
         # Now, calculate and send the metrics
         stats = {
             "Total images": metrics.calculate_total_images(data['image_urls']),
@@ -269,9 +219,9 @@ def run(quantize=False):
 if __name__ == "__main__":
     import argparse
 
-    # Add command-line argument for quantization
-    parser = argparse.ArgumentParser(description="Run the model client with optional quantization.")
+    parser = argparse.ArgumentParser(description="Run the model client.")
+    parser.add_argument("--model", type=str, choices=["yolo", "efficientnet"], default="yolo", help="Select the model to use.")
     parser.add_argument("--quantize", action="store_true", help="Quantize the model for lower energy consumption.")
     args = parser.parse_args()
 
-    run(quantize=args.quantize)
+    run(args.model, args.quantize)

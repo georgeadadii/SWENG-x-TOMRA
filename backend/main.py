@@ -80,6 +80,7 @@ def get_results() -> List[ResultType]:
                    i.image_url AS image_url,
                    a.classified AS classified,
                    a.misclassified AS misclassified,
+                   a.reviewed AS reviewed,
                    a.created_at AS created_at
             
             UNION
@@ -91,6 +92,7 @@ def get_results() -> List[ResultType]:
                    i.image_url AS image_url,
                    a.classified AS classified,
                    a.misclassified AS misclassified,
+                   a.reviewed AS reviewed,
                    a.created_at AS created_at
             """
         )
@@ -101,6 +103,7 @@ def get_results() -> List[ResultType]:
                 image_url=record["image_url"],
                 classified=record["classified"],
                 misclassified=record["misclassified"],
+                reviewed=record["reviewed"],
                 created_at=record["created_at"]
             ) 
             for record in result

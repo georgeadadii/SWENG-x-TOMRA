@@ -30,8 +30,11 @@ class ResultType:
     image_url: str = strawberry.field(name="imageUrl")
     classified: bool
     misclassified: bool
+    batch_id: str | None = strawberry.field(name="batchId")
+    # created_at: str | None = strawberry.field(name="createdAt")
     reviewed: bool
     created_at: datetime
+
 
 # Define a GraphQL type for the Metrics data
 @strawberry.type
@@ -66,37 +69,41 @@ NEO4J_PASSWORD = "password"
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-def get_results() -> List[ResultType]:
+def get_results(batch_id: str = None) -> List[ResultType]:
     """
     Queries the Neo4j database for all nodes with label 'Result'
     and returns a list of results including classification status.
     """
     with driver.session() as session:
-        result = session.run(
-            """
-            MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
-            MATCH (i)-[:HAS_BOUNDING_BOX]->(bb:BoundingBox)-[:HAS_LABEL]->(l:Label)
-            RETURN l.name AS class_label, 
-                bb.confidence AS confidence,
-                i.image_url AS image_url,
-                a.classified AS classified,
-                a.misclassified AS misclassified,
-                a.reviewed AS reviewed,
-                a.created_at AS created_at
-            
-            UNION
-
-            MATCH (i:Image)-[:HAS_ANNOTATION]->(a:Annotation)
-            MATCH (i)-[:HAS_CLASSIFICATION]->(ca:ClassificationAnnotation)-[:HAS_LABEL]->(l:Label)
-            RETURN l.name AS class_label, 
-                ca.confidence AS confidence,
-                i.image_url AS image_url,
-                a.classified AS classified,
-                a.misclassified AS misclassified,
-                a.reviewed AS reviewed,
-                a.created_at AS created_at
-            """
-        )
+       
+        query = """
+        MATCH (i:Image)-[:BELONGS_TO]->(b:BatchNode)
+        MATCH (i)-[:HAS_ANNOTATION]->(a:Annotation)
+        MATCH (i)-[:HAS_BOUNDING_BOX]->(bb:BoundingBox)-[:HAS_LABEL]->(l:Label)
+        WHERE ($batch_id IS NULL OR b.batch_id = $batch_id)  
+        RETURN l.name AS class_label, 
+            bb.confidence AS confidence,
+            i.image_url AS image_url,
+            a.classified AS classified,
+            a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
+            b.batch_id AS batch_id,
+            a.created_at AS created_at
+        UNION
+        MATCH (i:Image)-[:BELONGS_TO]->(b:BatchNode)
+        MATCH (i)-[:HAS_ANNOTATION]->(a:Annotation)
+        MATCH (i)-[:HAS_CLASSIFICATION]->(ca:ClassificationAnnotation)-[:HAS_LABEL]->(l:Label)
+        WHERE ($batch_id IS NULL OR b.batch_id = $batch_id) 
+        RETURN l.name AS class_label, 
+            ca.confidence AS confidence,
+            i.image_url AS image_url,
+            a.classified AS classified,
+            a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
+            b.batch_id AS batch_id,
+            a.created_at AS created_at      
+        """
+        result = session.run(query, batch_id=batch_id)    
         return [
             ResultType(
                 class_label=record["class_label"],
@@ -104,11 +111,14 @@ def get_results() -> List[ResultType]:
                 image_url=record["image_url"],
                 classified=record["classified"],
                 misclassified=record["misclassified"],
+                batch_id=record["batch_id"],
                 reviewed=record["reviewed"],
                 created_at=record["created_at"]
+
             ) 
-            for record in result
+            for record in result        
         ]
+        
 
 
 def get_metrics() -> List[MetricsType]:
@@ -197,8 +207,8 @@ def store_feedback(image_url: str, reviewed: bool = None, classified: bool = Non
 @strawberry.type
 class Query:
     @strawberry.field
-    def results(self) -> List[ResultType]:
-        return get_results()
+    def results(self, batch_id: str = None) -> List[ResultType]:
+        return get_results(batch_id=batch_id)
 
     @strawberry.field
     def metrics(self) -> List[MetricsType]:

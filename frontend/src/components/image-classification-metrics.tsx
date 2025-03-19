@@ -39,7 +39,7 @@ function OverviewCard({ title, children }: OverviewCardProps) {
 
 export default function ImageClassificationMetrics() {
   return (
-    <Tabs defaultValue="internal" className="space-y-4">
+    <Tabs defaultValue="internal" className="space-y-4 p-5">
       <TabsList>
         <TabsTrigger value="internal">Internal Metrics</TabsTrigger>
         <TabsTrigger value="feedback">Feedback-based Metrics</TabsTrigger>

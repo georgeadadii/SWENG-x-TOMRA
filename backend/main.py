@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from fastapi import FastAPI
 import strawberry
+from datetime import datetime
 from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,9 +31,10 @@ class ResultType:
     classified: bool
     misclassified: bool
     batch_id: str | None = strawberry.field(name="batchId")
-    created_at: str | None = strawberry.field(name="createdAt")
+    # created_at: str | None = strawberry.field(name="createdAt")
+    reviewed: bool
+    created_at: datetime
 
-    
 
 # Define a GraphQL type for the Metrics data
 @strawberry.type
@@ -84,6 +86,7 @@ def get_results(batch_id: str = None) -> List[ResultType]:
             i.image_url AS image_url,
             a.classified AS classified,
             a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
             b.batch_id AS batch_id,
             a.created_at AS created_at
         UNION
@@ -96,6 +99,7 @@ def get_results(batch_id: str = None) -> List[ResultType]:
             i.image_url AS image_url,
             a.classified AS classified,
             a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
             b.batch_id AS batch_id,
             a.created_at AS created_at      
         """
@@ -108,7 +112,9 @@ def get_results(batch_id: str = None) -> List[ResultType]:
                 classified=record["classified"],
                 misclassified=record["misclassified"],
                 batch_id=record["batch_id"],
-                created_at=record["created_at"]  
+                reviewed=record["reviewed"],
+                created_at=record["created_at"]
+
             ) 
             for record in result        
         ]

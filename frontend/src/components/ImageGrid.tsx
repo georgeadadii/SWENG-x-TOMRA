@@ -4,13 +4,17 @@ import { gql, useQuery, useMutation } from "@apollo/client";
 import client from "@/lib/apolloClient";
 import { useState, useEffect, useMemo } from "react";
 import { FC } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ImageBatch from "@/components/ImageBatch";
 
 interface ImageData {
     imageUrl: string;
     classLabel: string;
     confidence: number;
+    batchId?: string;
     classified: boolean;
     misclassified: boolean;
+    createdAt?: string;
 }
 
 const GET_IMAGES = gql`
@@ -19,8 +23,10 @@ const GET_IMAGES = gql`
       imageUrl
       classLabel
       confidence
+      batchId
       classified
       misclassified
+      createdAt
     }
   }
 `;
@@ -55,16 +61,19 @@ const ImageGrid: FC = () => {
         }
     }, [data]); // Runs whenever `data` changes
 
+
+
     const uniqueImages = useMemo(() => {
         const seen = new Set();
-        return data?.results.filter(image => {
+        return data?.results?.filter(image => {
             if (seen.has(image.imageUrl)) {
                 return false;
             }
             seen.add(image.imageUrl);
             return true;
-        }) || [];
+        }) || []; 
     }, [data]);
+
 
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";
@@ -88,24 +97,47 @@ const ImageGrid: FC = () => {
         }
     };
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
-
     return (
-        <div className="w-full h-screen overflow-y-auto p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-            {uniqueImages.map((image, index) => (
-                <div
-                    key={index}
-                    className={`relative cursor-pointer transition-transform overflow-hidden flex items-center justify-center bg-transparent rounded-lg ${
-                        hoveredIndex === index ? "scale-105 shadow-lg" : "scale-100"
-                    }`}
-                    onMouseEnter={() => setHoveredIndex(index)}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                    onClick={() => setSelectedImage(image)}
-                >
-                    <img src={image.imageUrl} alt={image.classLabel} className="w-full h-full object-cover aspect-square" />
-                </div>
-            ))}
+        <Tabs defaultValue="grid" className="space-y-4">
+            <TabsList className="flex gap-4 border-b">
+                <TabsTrigger value="grid">Overview</TabsTrigger>
+                <TabsTrigger value="batch">Batch View</TabsTrigger>
+            </TabsList>
+
+            {/* Image Grid View */}
+            <TabsContent value="grid">
+                {loading && <p>Loading...</p>}
+                {error && <p>Error: {error.message}</p>}
+                {!loading && !error && (
+                    <div className="w-full h-screen overflow-y-auto p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
+                        {uniqueImages.map((image, index) => (
+                            <div
+                                key={index}
+                                className={`relative cursor-pointer transition-transform overflow-hidden flex items-center justify-center bg-transparent rounded-lg ${
+                                    hoveredIndex === index ? "scale-105 shadow-lg" : "scale-100"
+                                }`}
+                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}
+                                onClick={() => setSelectedImage(image)}
+                            >
+                                <img src={image.imageUrl} alt={image.classLabel} className="w-full h-full object-cover aspect-square" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </TabsContent>
+
+            {/* Batch View */}
+            <TabsContent value="batch">
+                <ImageBatch 
+                    images={uniqueImages} 
+                    onClassify={handleFeedback} 
+                    annotationStatus={annotationStatus} 
+                    hoveredIndex={hoveredIndex}
+                    setHoveredIndex={setHoveredIndex}
+                    setSelectedImage={setSelectedImage}
+                />
+            </TabsContent>
 
             {/* Image Modal */}
             {selectedImage && (
@@ -157,7 +189,7 @@ const ImageGrid: FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </Tabs>
     );
 };
 

@@ -70,7 +70,10 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                             image_url=image_url,
                             batch_id=request.batch_id,
                             task_type=request.task_type,
-                            bbox_coordinates=bbox
+                            bbox_coordinates=bbox,
+                            image_width=request.image_width,  
+                            image_height=request.image_height,  
+                            image_format=request.image_format  
                         )
 
                         try:

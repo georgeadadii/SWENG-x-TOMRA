@@ -16,6 +16,9 @@ message ResultsRequest {
   float inference_time = 8;
   float postprocessing_time = 9;
   repeated float box_proportions = 10;
+  int32 image_width = 11;        
+  int32 image_height = 12;         
+  string image_format = 13; 
 }
 
 message ResultsResponse {

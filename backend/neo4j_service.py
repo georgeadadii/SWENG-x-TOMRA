@@ -25,14 +25,22 @@ class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
                         batch_id=request.batch_id
                     )
 
-                    # Image Node
+                    # Image Node with metadata
                     session.run(
                         """
-                        MERGE (i:Image {image_url: $image_url})
+                        MERGE (i:Image {
+                            image_url: $image_url,
+                            width: $width,
+                            height: $height,
+                            format: $format
+                        })
                         MERGE (b:BatchNode {batch_id: $batch_id})
                         MERGE (i)-[:BELONGS_TO]->(b)
                         """,
                         image_url=request.image_url,
+                        width=request.image_width,  # Add image width
+                        height=request.image_height,  # Add image height
+                        format=request.image_format,  # Add image format
                         batch_id=request.batch_id
                     )
 

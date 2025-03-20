@@ -165,16 +165,16 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         Args: metrics_data (dict): A dictionary containing metrics data for an image.
         Returns: bool: True if the metrics were successfully stored, False otherwise.
         """
-        try:
-            # Ensure the metrics_data dictionary has the required fields
-            required_fields = [
-                "image_url", "top_label", "labels", "confidences", "preprocessing_time",
-                "inference_time", "postprocessing_time", "bbox_coordinates", "box_proportions"
-            ]
-            for field in required_fields:
-                if field not in metrics_data:
-                    raise ValueError(f"Missing required field: {field}")
 
+        required_fields = [
+            "image_url", "top_label", "labels", "confidences", "preprocessing_time",
+            "inference_time", "postprocessing_time", "bbox_coordinates", "box_proportions"
+        ]
+        for field in required_fields:
+            if field not in metrics_data:
+                raise ValueError(f"Missing required field: {field}")
+
+        try:
             # Create a Cosmos DB item
             cosmos_item = {
                 "id": str(uuid.uuid4()),

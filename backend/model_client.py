@@ -13,33 +13,60 @@ from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
 from models.model_factory import ModelFactory
+from PIL import Image
+import hashlib
 
 AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
 CONTAINER_NAME = "sweng25group06cont"
 
-def upload_to_azure(image_path):
-    blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
-    blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=os.path.basename(image_path))
+def compute_file_hash(file_path, hash_algorithm="sha256"):
+    """Compute the hash of a file using the specified algorithm."""
 
-    with open(image_path, "rb") as data:
-        blob_client.upload_blob(data, overwrite=True)
+    hash_func = hashlib.new(hash_algorithm)
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_func.update(chunk)
+    return hash_func.hexdigest()
+
+def upload_to_azure(image_path):
+    """Upload an image to Azure Blob Storage using its hash as the blob name."""
+
+    image_hash = compute_file_hash(image_path)
+    blob_name = f"{image_hash}.{image_path.split('.')[-1]}"
+
+    blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+    blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=blob_name)
+
+    if blob_client.exists():
+        print(f"Image already exists in Azure Blob Storage: {blob_name}")
+    else:
+        with open(image_path, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
+        print(f"Image uploaded to Azure Blob Storage: {blob_name}")
 
     """Creates the Blob URL"""
-    image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{os.path.basename(image_path)}"
+    image_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{blob_name}"
 
     return image_url 
 
 def process_image(image_path, model, quantize=False):
     """Process an image using YOLO and return class labels and confidences."""
 
-    return model.process_image(image_path)
+    # Open the image to extract metadata
+    with Image.open(image_path) as img:
+        width, height = img.size
+        image_format = img.format
 
-def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, pre_times, inf_times, post_times, box_props, retries=3, delay=2):
+    labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type = model.process_image(image_path)
+
+    return labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type, width, height, image_format
+
+def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, batch_id, task_type, pre_times, inf_times, post_times, box_props, widths, heights, formats, retries=3, delay=2):
     """Send a stream of image results to the gRPC server with retry logic."""
     
     # Create a generator to stream multiple requests
     def request_generator():
-        for image_url, labels, confs, bboxes, pre_time, inf_time, post_time, box_prop in zip(image_urls, labels_list, confs_list, bboxes_list, pre_times, inf_times, post_times, box_props):
+        for image_url, labels, confs, bboxes, pre_time, inf_time, post_time, box_prop, width, height, format in zip(image_urls, labels_list, confs_list, bboxes_list, pre_times, inf_times, post_times, box_props, widths, heights, formats):
             if task_type == "image_classification":
                 bbox_coords = ["0,0,0,0"] 
                 box_prop = [0]
@@ -55,7 +82,10 @@ def send_results_to_server(image_urls, labels_list, confs_list, bboxes_list, bat
                 preprocessing_time=pre_time,
                 inference_time=inf_time,
                 postprocessing_time=post_time,
-                box_proportions=box_prop
+                box_proportions=box_prop,
+                image_width=width,         
+                image_height=height,         
+                image_format=format  
             )
 
     with grpc.insecure_channel("localhost:50051") as channel:
@@ -142,7 +172,10 @@ def run(model_name, quantize=False):
             'label_counts': [],
             'bboxes_list': [],
             'box_props': [],
-            'orig_shapes': []
+            'orig_shapes': [],
+            'widths': [],  # New field for image widths
+            'heights': [], # New field for image heights
+            'formats': []  # New field for image formats
         }
 
         # Process each image and accumulate results for streaming
@@ -153,7 +186,7 @@ def run(model_name, quantize=False):
             image_url = upload_to_azure(image_path)
 
             # Process the image using YOLO
-            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type  = process_image(image_path, model, quantize)
+            labels, confs, bboxes, pre_times, inf_times, post_times, proportions, orig_shape, task_type, width, height, format  = process_image(image_path, model, quantize)
 
             data['image_urls'].append(image_url)
             data['pre_times'].extend(pre_times)
@@ -166,6 +199,9 @@ def run(model_name, quantize=False):
             data['bboxes_list'].append(bboxes)
             data['box_props'].append(proportions)
             data['orig_shapes'].append(orig_shape)
+            data['widths'].append(width)      # Add image width
+            data['heights'].append(height)    # Add image height
+            data['formats'].append(format)
 
 
         # After all images are processed, send the results to the server in a stream
@@ -179,7 +215,10 @@ def run(model_name, quantize=False):
             data['pre_times'],
             data['inf_times'],
             data['post_times'],
-            data['box_props']
+            data['box_props'],
+            data['widths'],       # Pass image widths
+            data['heights'],     # Pass image heights
+            data['formats']      # Pass image formats
         )
 
         print("pre_times:",data['pre_times'])

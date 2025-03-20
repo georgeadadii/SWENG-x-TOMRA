@@ -13,6 +13,9 @@ message ClassificationResult {
   string batch_id = 4;
   string task_type = 5;
   string bbox_coordinates = 6;
+  int32 image_width = 7;  
+  int32 image_height = 8; 
+  string image_format = 9; 
 }
 
 message StoreResultResponse {

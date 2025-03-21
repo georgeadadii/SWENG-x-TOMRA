@@ -13,6 +13,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
+from datetime import datetime
 
 env_path = Path("..") / ".env"  # Go up one level to the root directory
 load_dotenv(dotenv_path=env_path)

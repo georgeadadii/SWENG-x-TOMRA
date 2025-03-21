@@ -51,7 +51,7 @@ export default function BoxProportionMetrics() {
         }));
 
         setDistribution(formattedDist);
-        setAverageBoxSize(data.averageBoxProportion);
+        setAverageBoxSize(data.averageBoxProportion*100);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -75,7 +75,7 @@ export default function BoxProportionMetrics() {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Average Bounding Box Proportion</p>
-            <p className="text-2xl font-bold">{averageBoxSize?.toFixed(2)} px</p>
+            <p className="text-2xl font-bold">{averageBoxSize?.toFixed(2)} %</p>
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">

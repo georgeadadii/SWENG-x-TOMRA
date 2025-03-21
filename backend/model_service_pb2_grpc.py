@@ -34,7 +34,7 @@ class ModelServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.StoreResults = channel.unary_unary(
+        self.StoreResults = channel.stream_stream(
                 '/ModelService/StoreResults',
                 request_serializer=model__service__pb2.ResultsRequest.SerializeToString,
                 response_deserializer=model__service__pb2.ResultsResponse.FromString,
@@ -49,7 +49,7 @@ class ModelServiceStub(object):
 class ModelServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def StoreResults(self, request, context):
+    def StoreResults(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -64,7 +64,7 @@ class ModelServiceServicer(object):
 
 def add_ModelServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'StoreResults': grpc.unary_unary_rpc_method_handler(
+            'StoreResults': grpc.stream_stream_rpc_method_handler(
                     servicer.StoreResults,
                     request_deserializer=model__service__pb2.ResultsRequest.FromString,
                     response_serializer=model__service__pb2.ResultsResponse.SerializeToString,
@@ -86,7 +86,7 @@ class ModelService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def StoreResults(request,
+    def StoreResults(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -96,8 +96,8 @@ class ModelService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
             '/ModelService/StoreResults',
             model__service__pb2.ResultsRequest.SerializeToString,

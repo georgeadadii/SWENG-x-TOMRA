@@ -10,3 +10,5 @@ torch
 torchvision
 azure-identity
 azure-keyvault
+efficientnet-pytorch
+azure.cosmos

@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from fastapi import FastAPI
 import strawberry
+from datetime import datetime
 from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,13 @@ class ResultType:
     class_label: str = strawberry.field(name="classLabel")
     confidence: float
     image_url: str = strawberry.field(name="imageUrl")
+    classified: bool
+    misclassified: bool
+    batch_id: str | None = strawberry.field(name="batchId")
+    # created_at: str | None = strawberry.field(name="createdAt")
+    reviewed: bool
+    created_at: datetime
+
 
 # Define a GraphQL type for the Metrics data
 @strawberry.type
@@ -62,28 +70,57 @@ NEO4J_PASSWORD = get_secret("NEO4J-PASSWORD")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-def get_results() -> List[ResultType]:
+def get_results(batch_id: str = None) -> List[ResultType]:
     """
     Queries the Neo4j database for all nodes with label 'Result'
-    and returns a list of results including image_url from their related image node.
+    and returns a list of results including classification status.
     """
     with driver.session() as session:
-        result = session.run(
-            """
-            MATCH (r:Result)-[:CLASSIFIED_FROM]->(i:Image)
-            RETURN r.class_label AS class_label, 
-                   r.confidence AS confidence,
-                   i.image_url AS image_url
-            """
-        )
+       
+        query = """
+        MATCH (i:Image)-[:BELONGS_TO]->(b:BatchNode)
+        MATCH (i)-[:HAS_ANNOTATION]->(a:Annotation)
+        MATCH (i)-[:HAS_BOUNDING_BOX]->(bb:BoundingBox)-[:HAS_LABEL]->(l:Label)
+        WHERE ($batch_id IS NULL OR b.batch_id = $batch_id)  
+        RETURN l.name AS class_label, 
+            bb.confidence AS confidence,
+            i.image_url AS image_url,
+            a.classified AS classified,
+            a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
+            b.batch_id AS batch_id,
+            a.created_at AS created_at
+        UNION
+        MATCH (i:Image)-[:BELONGS_TO]->(b:BatchNode)
+        MATCH (i)-[:HAS_ANNOTATION]->(a:Annotation)
+        MATCH (i)-[:HAS_CLASSIFICATION]->(ca:ClassificationAnnotation)-[:HAS_LABEL]->(l:Label)
+        WHERE ($batch_id IS NULL OR b.batch_id = $batch_id) 
+        RETURN l.name AS class_label, 
+            ca.confidence AS confidence,
+            i.image_url AS image_url,
+            a.classified AS classified,
+            a.misclassified AS misclassified,
+            a.reviewed AS reviewed,
+            b.batch_id AS batch_id,
+            a.created_at AS created_at      
+        """
+        result = session.run(query, batch_id=batch_id)    
         return [
             ResultType(
                 class_label=record["class_label"],
                 confidence=record["confidence"],
-                image_url=record["image_url"]
+                image_url=record["image_url"],
+                classified=record["classified"],
+                misclassified=record["misclassified"],
+                batch_id=record["batch_id"],
+                reviewed=record["reviewed"],
+                created_at=record["created_at"]
+
             ) 
-            for record in result
+            for record in result        
         ]
+        
+
 
 def get_metrics() -> List[MetricsType]:
     """
@@ -125,17 +162,72 @@ def get_metrics() -> List[MetricsType]:
             for record in result
         ]
 
+def store_feedback(image_url: str, reviewed: bool = None, classified: bool = None, misclassified: bool = None) -> str:
+    """
+    Updates the Annotation node's properties based on feedback.
+    
+    :param image_url: The URL of the image whose annotation needs updating.
+    :param reviewed: Boolean flag to update the 'reviewed' field.
+    :param classified: Boolean flag to update the 'classified' field.
+    :param misclassified: Boolean flag to update the 'misclassified' field.
+    :return: A confirmation message indicating the update status.
+    """
+    try:
+        with driver.session() as session:
+            # ✅ First, check if the Image exists and has an Annotation
+            check_query = """
+            MATCH (i:Image {image_url: $image_url})-[:HAS_ANNOTATION]->(a:Annotation)
+            RETURN a
+            """
+            check_result = session.run(check_query, image_url=image_url)
+
+            if check_result.single() is None:
+                return f"⚠️ Image found, but no annotation exists for: {image_url}"
+
+            # ✅ If annotation exists, update it
+            query = """
+            MATCH (i:Image {image_url: $image_url})-[:HAS_ANNOTATION]->(a:Annotation)
+            SET a.reviewed = COALESCE($reviewed, a.reviewed),
+                a.classified = COALESCE($classified, a.classified),
+                a.misclassified = COALESCE($misclassified, a.misclassified)
+            RETURN COUNT(a) AS updatedCount
+            """
+            result = session.run(query, image_url=image_url, reviewed=reviewed, classified=classified, misclassified=misclassified)
+            updated_count = result.single()["updatedCount"]
+
+            if updated_count > 0:
+                return f"✅ Successfully updated {updated_count} annotation(s) for image: {image_url}"
+            else:
+                return f"⚠️ No annotation updated for image URL: {image_url}. Data exists but was unchanged."
+
+    except Exception as e:
+        return f"❌ Error updating annotation: {str(e)}"
+
+
+
 @strawberry.type
 class Query:
     @strawberry.field
-    def results(self) -> List[ResultType]:
-        return get_results()
+    def results(self, batch_id: str = None) -> List[ResultType]:
+        return get_results(batch_id=batch_id)
 
     @strawberry.field
     def metrics(self) -> List[MetricsType]:
         return get_metrics()    
+    
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def store_feedback(
+        self, image_url: str, reviewed: bool = None, classified: bool = None, misclassified: bool = None
+    ) -> str:
+        """
+        Updates an annotation node's properties (reviewed, classified, misclassified).
+        """
+        return store_feedback(image_url, reviewed, classified, misclassified)
 
-schema = strawberry.Schema(query=Query)
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)
 graphql_app = GraphQLRouter(schema, graphiql=True)
 
 app = FastAPI()

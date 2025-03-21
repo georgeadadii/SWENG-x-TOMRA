@@ -1,14 +1,23 @@
 "use client";
 
-import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery, useMutation } from "@apollo/client";
 import client from "@/lib/apolloClient";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FC } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ImageBatch from "@/components/ImageBatch";
+import type { Option } from "@/components/ui/multi-select";
+import { ImageClassificationFilter } from "./filter";
+
 
 interface ImageData {
     imageUrl: string;
     classLabel: string;
     confidence: number;
+    batchId?: string;
+    classified: boolean;
+    misclassified: boolean;
+    createdAt: string;
 }
 
 const GET_IMAGES = gql`
@@ -17,44 +26,181 @@ const GET_IMAGES = gql`
       imageUrl
       classLabel
       confidence
+      batchId
+      classified
+      misclassified
+      createdAt
     }
   }
 `;
 
-const ImageGrid: FC = () => {
+const STORE_FEEDBACK = gql`
+  mutation StoreFeedback($imageUrl: String!, $reviewed: Boolean, $classified: Boolean, $misclassified: Boolean) {
+    storeFeedback(imageUrl: $imageUrl, reviewed: $reviewed, classified: $classified, misclassified: $misclassified)
+  }
+`;
+
+
+type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
+type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
+
+function daysFromToday(targetDate: string): number {
+    const today = new Date(); // Current date
+    const target = new Date(targetDate); // Convert input string to Date
+
+    const diffInMs = today.getTime() - target.getTime(); // Difference in milliseconds
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // Convert to days
+
+    return diffInDays;
+}
+const ImageGrid: FC<{ 
+    selectedLabels: Option[], 
+    setSelectedLabels: (labels: Option[]) => void,
+    statusFilter: StatusFilter,
+    dateFilter: DateFilter  
+}> = ({ 
+    selectedLabels, 
+    setSelectedLabels, 
+    statusFilter, 
+    dateFilter
+}) => {
     const { data, loading, error } = useQuery<{ results: ImageData[] }>(GET_IMAGES, { client });
+    const [storeFeedback] = useMutation(STORE_FEEDBACK, { client });
     const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [annotationStatus, setAnnotationStatus] = useState<Record<string, "correct" | "incorrect" | null>>({});
+
+    // When data changes, update classification status
+    useEffect(() => {
+        if (data?.results) {
+            const newStatus: Record<string, "correct" | "incorrect" | null> = {};
+            data.results.forEach((image) => {
+                if (image.classified) {
+                    newStatus[image.imageUrl] = "correct";
+                } else if (image.misclassified) {
+                    newStatus[image.imageUrl] = "incorrect";
+                } else {
+                    newStatus[image.imageUrl] = null;
+                }
+            });
+            setAnnotationStatus(newStatus);
+        }
+    }, [data]); // Runs whenever `data` changes
+
+
 
     const uniqueImages = useMemo(() => {
         const seen = new Set();
-        return data?.results.filter(image => {
+        return data?.results?.filter(image => {
+            // Check for duplicate images
             if (seen.has(image.imageUrl)) {
                 return false;
             }
             seen.add(image.imageUrl);
-            return true;
-        }) || [];
-    }, [data]);
+            // Date filtering
+            switch (dateFilter) {
+                case 'today':
+                    if (daysFromToday(image.createdAt)>1) return false;
+                    break;
+                case 'yesterday':
+                    if (daysFromToday(image.createdAt)>2) return false;
+                    break;
+                case 'last7days':
+                    if (daysFromToday(image.createdAt)>7) return false;
+                    break;
+                case 'last30days':
+                    if (daysFromToday(image.createdAt)>30) return false;
+                    break;   
+            }
+            // Status filtering
+            switch (statusFilter) {
+                case 'correct':
+                    if (!image.classified || image.misclassified) return false;
+                    break;
+                case 'misclassified':
+                    if (!image.misclassified) return false;
+                    break;
+                case 'not reviewed':
+                    if (image.classified || image.misclassified) return false;
+                    break;
+            }
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error.message}</p>;
+            // Label filtering
+            if (!selectedLabels?.length) {
+                return true;
+            }
+
+            const normalizedImageLabel = image.classLabel.toLowerCase().trim();
+            return selectedLabels.some(label => 
+                label.value.toLowerCase().trim() === normalizedImageLabel
+            );
+        }) || [];
+    }, [data, selectedLabels, statusFilter, dateFilter]);
+
+
+    const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
+        const status = isCorrect ? "correct" : "incorrect";
+
+        try {
+            await storeFeedback({
+                variables: {
+                    imageUrl,
+                    reviewed: true,
+                    classified: isCorrect,
+                    misclassified: !isCorrect,
+                },
+            });
+
+            setAnnotationStatus((prev) => ({
+                ...prev,
+                [imageUrl]: status,
+            }));
+        } catch (err) {
+            console.error("Error storing feedback:", err);
+        }
+    };
 
     return (
-        <div className="w-full h-screen overflow-y-auto p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-            {uniqueImages.map((image, index) => (
-                <div
-                    key={index}
-                    className={`relative cursor-pointer transition-transform overflow-hidden flex items-center justify-center bg-transparent rounded-lg ${
-                        hoveredIndex === index ? "scale-105 shadow-lg" : "scale-100"
-                    }`}
-                    onMouseEnter={() => setHoveredIndex(index)}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                    onClick={() => setSelectedImage(image)}
-                >
-                    <img src={image.imageUrl} alt={image.classLabel} className="w-full h-full object-cover aspect-square" />
-                </div>
-            ))}
+        <Tabs defaultValue="grid" className="space-y-4">
+            <TabsList className="flex gap-4 border-b">
+                <TabsTrigger value="grid">Overview</TabsTrigger>
+                <TabsTrigger value="batch">Batch View</TabsTrigger>
+            </TabsList>
+
+            {/* Image Grid View */}
+            <TabsContent value="grid">
+                {loading && <p>Loading...</p>}
+                {error && <p>Error: {error.message}</p>}
+                {!loading && !error && (
+                    <div className="w-full h-screen overflow-y-auto p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
+                        {uniqueImages.map((image, index) => (
+                            <div
+                                key={index}
+                                className={`relative cursor-pointer transition-transform overflow-hidden flex items-center justify-center bg-transparent rounded-lg ${
+                                    hoveredIndex === index ? "scale-105 shadow-lg" : "scale-100"
+                                }`}
+                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}
+                                onClick={() => setSelectedImage(image)}
+                            >
+                                <img src={image.imageUrl} alt={image.classLabel} className="w-full h-full object-cover aspect-square" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </TabsContent>
+
+            {/* Batch View */}
+            <TabsContent value="batch">
+                <ImageBatch 
+                    images={uniqueImages} 
+                    onClassify={handleFeedback} 
+                    annotationStatus={annotationStatus} 
+                    hoveredIndex={hoveredIndex}
+                    setHoveredIndex={setHoveredIndex}
+                    setSelectedImage={setSelectedImage}
+                />
+            </TabsContent>
 
             {/* Image Modal */}
             {selectedImage && (
@@ -73,18 +219,40 @@ const ImageGrid: FC = () => {
                         />
                         <p className="text-lg font-semibold text-black">AI Tag: {selectedImage.classLabel}</p>
                         <p className="text-sm text-black">Confidence: {selectedImage.confidence.toFixed(2)}</p>
+
+                        {/* Display classification status */}
+                        <p className="mt-3 text-sm font-semibold text-gray-700">
+                            {annotationStatus[selectedImage.imageUrl]
+                                ? `✅ Previously annotated as ${annotationStatus[selectedImage.imageUrl]}`
+                                : "❗ Not yet classified"}
+                        </p>
+
                         <div className="mt-4 flex justify-center gap-4">
-                            <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                            <button
+                                className={`px-4 py-2 rounded-lg ${
+                                    annotationStatus[selectedImage.imageUrl] === "correct"
+                                        ? "bg-green-600 text-white"
+                                        : "bg-green-500 text-white hover:bg-green-600"
+                                }`}
+                                onClick={() => handleFeedback(selectedImage.imageUrl, true)}
+                            >
                                 Correct
                             </button>
-                            <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                            <button
+                                className={`px-4 py-2 rounded-lg ${
+                                    annotationStatus[selectedImage.imageUrl] === "incorrect"
+                                        ? "bg-red-600 text-white"
+                                        : "bg-red-500 text-white hover:bg-red-600"
+                                }`}
+                                onClick={() => handleFeedback(selectedImage.imageUrl, false)}
+                            >
                                 Incorrect
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </Tabs>
     );
 };
 

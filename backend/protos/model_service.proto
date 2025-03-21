@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 service ModelService {
-  rpc StoreResults (ResultsRequest) returns (ResultsResponse);
+  rpc StoreResults (stream ResultsRequest) returns (stream ResultsResponse);
   rpc StoreMetrics (MetricsRequest) returns (MetricsResponse);
 }
 
@@ -11,6 +11,14 @@ message ResultsRequest {
   repeated float confidences = 3;
   string batch_id = 4;
   string task_type = 5;
+  repeated string bbox_coordinates = 6;
+  float preprocessing_time = 7;
+  float inference_time = 8;
+  float postprocessing_time = 9;
+  repeated float box_proportions = 10;
+  int32 image_width = 11;        
+  int32 image_height = 12;         
+  string image_format = 13; 
 }
 
 message ResultsResponse {

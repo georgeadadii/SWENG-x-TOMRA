@@ -34,7 +34,7 @@ class Neo4jServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.StoreResult = channel.unary_unary(
+        self.StoreResult = channel.stream_stream(
                 '/Neo4jService/StoreResult',
                 request_serializer=neo4j__service__pb2.ClassificationResult.SerializeToString,
                 response_deserializer=neo4j__service__pb2.StoreResultResponse.FromString,
@@ -44,7 +44,7 @@ class Neo4jServiceStub(object):
                 request_serializer=neo4j__service__pb2.MetricsResult.SerializeToString,
                 response_deserializer=neo4j__service__pb2.StoreResultResponse.FromString,
                 _registered_method=True)
-        self.GetFeedback = channel.unary_unary(
+        self.GetFeedback = channel.unary_stream(
                 '/Neo4jService/GetFeedback',
                 request_serializer=neo4j__service__pb2.FeedbackRequest.SerializeToString,
                 response_deserializer=neo4j__service__pb2.FeedbackResponse.FromString,
@@ -54,7 +54,7 @@ class Neo4jServiceStub(object):
 class Neo4jServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def StoreResult(self, request, context):
+    def StoreResult(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -75,7 +75,7 @@ class Neo4jServiceServicer(object):
 
 def add_Neo4jServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'StoreResult': grpc.unary_unary_rpc_method_handler(
+            'StoreResult': grpc.stream_stream_rpc_method_handler(
                     servicer.StoreResult,
                     request_deserializer=neo4j__service__pb2.ClassificationResult.FromString,
                     response_serializer=neo4j__service__pb2.StoreResultResponse.SerializeToString,
@@ -85,7 +85,7 @@ def add_Neo4jServiceServicer_to_server(servicer, server):
                     request_deserializer=neo4j__service__pb2.MetricsResult.FromString,
                     response_serializer=neo4j__service__pb2.StoreResultResponse.SerializeToString,
             ),
-            'GetFeedback': grpc.unary_unary_rpc_method_handler(
+            'GetFeedback': grpc.unary_stream_rpc_method_handler(
                     servicer.GetFeedback,
                     request_deserializer=neo4j__service__pb2.FeedbackRequest.FromString,
                     response_serializer=neo4j__service__pb2.FeedbackResponse.SerializeToString,
@@ -102,7 +102,7 @@ class Neo4jService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def StoreResult(request,
+    def StoreResult(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -112,8 +112,8 @@ class Neo4jService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
             '/Neo4jService/StoreResult',
             neo4j__service__pb2.ClassificationResult.SerializeToString,
@@ -166,7 +166,7 @@ class Neo4jService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             '/Neo4jService/GetFeedback',

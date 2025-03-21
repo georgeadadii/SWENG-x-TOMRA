@@ -120,7 +120,7 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                         "box_proportions": list(request.box_proportions)
                     }
 
-                    if not self.store_metrics_in_cosmos(metrics_data):
+                    if not self.store_metrics_in_cosmos(metrics_data, request.batch_id, request.task_type):
                         success = False
 
                 except Exception as e:
@@ -177,7 +177,7 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         except Exception as e:
             return model_service_pb2.MetricsResponse(success=False, message=f"Error storing metrics: {str(e)}")
 
-    def store_metrics_in_cosmos(self, metrics_data):
+    def store_metrics_in_cosmos(self, metrics_data, batch_id, task_type):
         """
         Stores metrics data for an image in Cosmos DB.
         Args: metrics_data (dict): A dictionary containing metrics data for an image.
@@ -193,6 +193,28 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 raise ValueError(f"Missing required field: {field}")
 
         try:
+
+            query = f"""
+            SELECT * FROM c 
+            WHERE c.image_url = @image_url 
+            AND c.labels = @labels
+            """
+
+            parameters = [
+            {"name": "@image_url", "value": metrics_data["image_url"]},
+            {"name": "@labels", "value": metrics_data["labels"]}
+            ]
+
+            existing_items = list(self.cosmos_container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True
+            ))
+
+            if existing_items:
+                print(f"Duplicate result detected for image: {metrics_data['image_url']}")
+                return False 
+
             # Create a Cosmos DB item
             cosmos_item = {
                 "id": str(uuid.uuid4()),
@@ -204,10 +226,14 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 "inference_time": metrics_data["inference_time"],
                 "postprocessing_time": metrics_data["postprocessing_time"],
                 "bbox_coordinates": metrics_data["bbox_coordinates"],
-                "box_proportions": metrics_data["box_proportions"]
+                "box_proportions": metrics_data["box_proportions"],
+                "batch_id": batch_id,  
+                "task_type": task_type,  
+                "classified_at": datetime.utcnow().isoformat()  
             }
 
             self.cosmos_container.create_item(cosmos_item)
+            
             print(
                 f"Metrics stored successfully for image: {metrics_data['image_url']}")
             return True

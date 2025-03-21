@@ -15,9 +15,31 @@ from azure.storage.blob import BlobServiceClient
 from models.model_factory import ModelFactory
 from PIL import Image
 import hashlib
+from azure.identity import ClientSecretCredential
+from azure.keyvault.secrets import SecretClient
+from pathlib import Path
+from dotenv import load_dotenv
 
-AZURE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=sweng25group06;AccountKey=RdRBBOVWeYCd3WQOEmjzLY1nnDGBR7DblkGqnk7UenRP72DqmTtdqarsl15vYjxQRJ2E00Fn14Lo+ASts2WxPA==;EndpointSuffix=core.windows.net"
-CONTAINER_NAME = "sweng25group06cont"
+env_path = Path("..") / ".env"  
+load_dotenv(dotenv_path=env_path)
+
+TENANT_ID = os.getenv("AZURE_TENANT_ID")
+CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
+
+if not all([TENANT_ID, CLIENT_ID, CLIENT_SECRET]):
+    raise ValueError("Missing one or more required environment variables: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET")
+
+print(TENANT_ID)
+
+KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
+credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
+secret_client = SecretClient(vault_url=KEY_VAULT_URL, credential=credential)
+
+secret = secret_client.get_secret("AZURE-CONNECTION-STRING")
+AZURE_CONNECTION_STRING = secret.value
+secret = secret_client.get_secret("CONTAINER-NAME")
+CONTAINER_NAME = secret.value
 
 def compute_file_hash(file_path, hash_algorithm="sha256"):
     """Compute the hash of a file using the specified algorithm."""

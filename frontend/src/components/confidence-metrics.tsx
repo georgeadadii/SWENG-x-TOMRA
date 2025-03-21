@@ -26,9 +26,8 @@ export default function ConfidenceMetrics() {
           body: JSON.stringify({
             query: `
               query {
-                metrics {
-                  averageConfidenceScore
-                  confidenceDistribution
+                imageMetrics {
+                  confidences
                 }
               }
             `,
@@ -38,39 +37,44 @@ export default function ConfidenceMetrics() {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-    
+
         const result = await response.json();
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-    
-        const data = result.data.metrics[0];
 
-        // parse confidence distribution
-        const confidenceDist = JSON.parse(data.confidenceDistribution || "{}");
+        const rawData = result.data?.imageMetrics || [];
 
-        // set average confidence
-        setAverageConfidence(data.averageConfidenceScore);
-    
-        let formattedDist = Object.entries(confidenceDist).map(([range, count]) => ({
-          fullRange: range, // Keep the full range
-          shortRange: range.split("-")[0], // Show only the first part on X-axis
-          count: count as number,
+        // Flatten all confidence scores from all images
+        const allConfidences: number[] = rawData.flatMap((item: { confidences: number[] }) => item.confidences);
+
+        if (allConfidences.length === 0) {
+          throw new Error("No confidence data available");
+        }
+
+        // Define confidence bins (0.0-0.1, 0.1-0.2, ..., 0.9-1.0)
+        const bins = Array.from({ length: 10 }, (_, i) => ({
+          fullRange: `${(i / 10).toFixed(1)} - ${(i / 10 + 0.1).toFixed(1)}`,
+          shortRange: `${(i / 10).toFixed(1)}-${(i / 10 + 0.1).toFixed(1)}`,
+          count: 0,
         }));
 
-        // Sort by numerical value of first part of the range
-        formattedDist.sort((a, b) => parseFloat(a.shortRange) - parseFloat(b.shortRange));
+        // Count occurrences in each bin
+        allConfidences.forEach((conf) => {
+          const index = Math.min(Math.floor(conf * 10), 9); // Ensure 1.0 falls into last bin
+          bins[index].count++;
+        });
 
-        setConfidenceDistribution(formattedDist);
+        // Compute average confidence
+        const avgConfidence = allConfidences.reduce((sum, val) => sum + val, 0) / allConfidences.length;
 
-        // Calculate high confidence percentage
-        const highConfidenceCount = formattedDist
-          .filter(({ shortRange }) => parseFloat(shortRange) >= 0.8)
-          .reduce((sum, { count }) => sum + count, 0);
+        // Compute high-confidence percentage (>0.8)
+        const highConfidenceCount = allConfidences.filter((c) => c > 0.8).length;
+        const highConfidencePct = (highConfidenceCount / allConfidences.length) * 100;
 
-        const totalDetections = formattedDist.reduce((sum, { count }) => sum + count, 0);
-        setHighConfidencePercentage(totalDetections ? (100 * highConfidenceCount) / totalDetections : 0);
-
+        setConfidenceDistribution(bins);
+        setAverageConfidence(avgConfidence);
+        setHighConfidencePercentage(highConfidencePct);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -99,7 +103,6 @@ export default function ConfidenceMetrics() {
           <div>
             <p className="text-sm font-medium">High Confidence Detections ({">"}0.8)</p>
             <p className="text-2xl font-bold">{highConfidencePercentage !== null ? highConfidencePercentage.toFixed(2) : "Loading..."}%</p>
-            
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -107,9 +110,7 @@ export default function ConfidenceMetrics() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="shortRange" />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value, name, props) => [`${value}`, `Range: ${props.payload.fullRange}`]} 
-                />
+                <Tooltip formatter={(value, name, props) => [`${value}`, `Range: ${props.payload.fullRange}`]} />
                 <Bar dataKey="count" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
@@ -119,6 +120,7 @@ export default function ConfidenceMetrics() {
     </Card>
   );
 }
+
 
 
 

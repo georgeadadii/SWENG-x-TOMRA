@@ -11,6 +11,8 @@ from azure.cosmos import CosmosClient
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from azure.identity import ClientSecretCredential
+from azure.keyvault.secrets import SecretClient
 
 env_path = Path("..") / ".env"  # Go up one level to the root directory
 load_dotenv(dotenv_path=env_path)
@@ -23,10 +25,25 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
         self.neo4j_stub = neo4j_service_pb2_grpc.Neo4jServiceStub(
             self.neo4j_channel)
 
-        COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")
-        COSMOS_KEY = os.getenv("COSMOS_KEY")
-        DATABASE_NAME = os.getenv("DATABASE_NAME")
-        CONTAINER_NAME = os.getenv("CONTAINER_NAME")
+        TENANT_ID = os.getenv("AZURE_TENANT_ID")
+        CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
+        CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
+
+        if not all([TENANT_ID, CLIENT_ID, CLIENT_SECRET]):
+            raise ValueError("Missing one or more required environment variables: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET")
+
+        KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
+        credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
+        secret_client = SecretClient(vault_url=KEY_VAULT_URL, credential=credential)
+
+        secret = secret_client.get_secret("COSMOS-ENDPOINT")
+        COSMOS_ENDPOINT = secret.value
+        secret = secret_client.get_secret("COSMOS-KEY")
+        COSMOS_KEY = secret.value
+        secret = secret_client.get_secret("COSMOS-DATABASE-NAME")
+        DATABASE_NAME = secret.value
+        secret = secret_client.get_secret("COSMOS-CONTAINER-NAME")
+        CONTAINER_NAME = secret.value
 
         if not all([COSMOS_ENDPOINT, COSMOS_KEY, DATABASE_NAME, CONTAINER_NAME]):
             raise ValueError("Missing one or more required environment variables.")

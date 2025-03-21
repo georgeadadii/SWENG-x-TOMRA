@@ -132,6 +132,9 @@ def test_store_metrics_in_cosmos_error(model_service):
 
     model_service.cosmos_container.create_item.side_effect = Exception("Cosmos DB error")
 
-    result = model_service.store_metrics_in_cosmos(metrics_data)
+    batch_id = "1234"
+    task_type = "object_detection"
+
+    result = model_service.store_metrics_in_cosmos(metrics_data, batch_id, task_type)
 
     assert result is False

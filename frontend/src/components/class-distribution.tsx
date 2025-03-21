@@ -57,12 +57,12 @@ export default function ClassDistribution() {
         // Convert to array and sort by count in descending order
         let sortedData = Object.values(aggregatedData).sort((a, b) => b.count - a.count);
 
-        // Take top 20 and sum up the rest
-        const top20 = sortedData.slice(0, 20);
-        const otherCount = sortedData.slice(20).reduce((sum, item) => sum + item.count, 0);
+        // Take top 15 and sum up the rest
+        const top15 = sortedData.slice(0, 15);
+        const otherCount = sortedData.slice(15).reduce((sum, item) => sum + item.count, 0);
 
-        // Add "Other" category if there are more than 20 classes
-        let finalData = top20;
+        // Add "Other" category if there are more than 15 classes
+        let finalData = top15;
         if (otherCount > 0) {
           finalData.push({ topLabel: "Other Classes", count: otherCount });
         }
@@ -94,24 +94,42 @@ export default function ClassDistribution() {
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie 
-                data={results} 
-                cx="50%" 
-                cy="50%" 
-                labelLine={false} 
-                outerRadius={80} 
-                fill="#8884d8" 
-                dataKey="count" 
+              <Pie
+                data={results}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="count"
                 nameKey="topLabel">
                 {results.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
+              <Tooltip
                 formatter={(value: any, name: string) => {
                   const percent = ((value / totalCount) * 100).toFixed(2);
                   return [`${name}: ${value} (${percent}%)`];
-                }} 
+                }}
+              />
+              <Legend
+                formatter={(value: string, entry: any, index: number) => {
+                  // Only show the label for the first 10 items
+                  if (index < 10) {
+                    return value; // Show both the label and the icon for the first 10 items
+                  } else {
+                    return null; // Hide both label and icon for items beyond the first 10
+                  }
+                }}
+                iconSize={10} // Adjust the size of the icons if needed
+                verticalAlign="bottom" // Adjust vertical alignment as per your layout
+                payload={results.slice(0, 10).map((item, index) => ({
+                  id: item.topLabel,
+                  type: 'circle',
+                  value: item.topLabel,
+                  color: COLORS[index % COLORS.length],
+                }))}
               />
             </PieChart>
           </ResponsiveContainer>

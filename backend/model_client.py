@@ -10,20 +10,43 @@ import torch
 from torch.quantization import quantize_dynamic
 from ultralytics import YOLO
 from azure.storage.blob import BlobServiceClient
-from azure.identity import DefaultAzureCredential
+from models.model_factory import ModelFactory
+from PIL import Image
+import hashlib
+from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
-from keyvault_utils import get_secret
+from pathlib import Path
+from dotenv import load_dotenv
 
-AZURE_CONNECTION_STRING = get_secret("AZURE-STORAGE-CONNECTION-STRING")
-CONTAINER_NAME = get_secret("CONTAINER-NAME")
+env_path = Path("..") / ".env"  
+load_dotenv(dotenv_path=env_path)
 
-class YOLOv11:
-    def __init__(self, model_path):
-        self.model = YOLO(model_path)
-        self.task_type = "object_detection" 
+TENANT_ID = os.getenv("AZURE_TENANT_ID")
+CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
 
-    def get_task_type(self):
-        return self.task_type
+if not all([TENANT_ID, CLIENT_ID, CLIENT_SECRET]):
+    raise ValueError("Missing one or more required environment variables: AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET")
+
+print(TENANT_ID)
+
+KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
+credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
+secret_client = SecretClient(vault_url=KEY_VAULT_URL, credential=credential)
+
+secret = secret_client.get_secret("AZURE-CONNECTION-STRING")
+AZURE_CONNECTION_STRING = secret.value
+secret = secret_client.get_secret("CONTAINER-NAME")
+CONTAINER_NAME = secret.value
+
+def compute_file_hash(file_path, hash_algorithm="sha256"):
+    """Compute the hash of a file using the specified algorithm."""
+
+    hash_func = hashlib.new(hash_algorithm)
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_func.update(chunk)
+    return hash_func.hexdigest()
 
 def upload_to_azure(image_path):
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)

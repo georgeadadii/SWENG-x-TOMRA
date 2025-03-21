@@ -8,6 +8,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 type MetricsData = {
   totalImages: number;
   averageConfidenceScore: number;
+  averageDetections: number;
   averagePreprocessTime: number;
   averageInferenceTime: number;
   averagePostprocessTime: number;
@@ -52,8 +53,12 @@ export default function Overview() {
         // Calculate total images
         const totalImages = imageMetrics.length;
         const allConfidences: number[] = imageMetrics.flatMap((item: { confidences: number[] }) => item.confidences);
+        const detectionsPerImage = imageMetrics.map((item: { confidences: string[] }) => item.confidences.length);
         // Calculate averages
-        const averageConfidenceScore = allConfidences.reduce((sum, val) => sum + val, 0) / allConfidences.length;
+        const averageConfidenceScore = 
+          allConfidences.reduce((sum, val) => sum + val, 0) / allConfidences.length;
+        const averageDetections = 
+          detectionsPerImage.reduce((sum: any, val: any) => sum + val, 0) / detectionsPerImage.length;  
         const averagePreprocessTime =
           imageMetrics.reduce((sum: number, img: any) => sum + img.preprocessingTime, 0) / totalImages;
         const averageInferenceTime =
@@ -64,6 +69,7 @@ export default function Overview() {
         setMetrics({
           totalImages,
           averageConfidenceScore,
+          averageDetections,
           averagePreprocessTime,
           averageInferenceTime,
           averagePostprocessTime,
@@ -86,6 +92,7 @@ export default function Overview() {
   const {
     totalImages = 0,
     averageConfidenceScore = 0,
+    averageDetections = 0,
     averagePreprocessTime = 0,
     averageInferenceTime = 0,
     averagePostprocessTime = 0,
@@ -112,6 +119,10 @@ export default function Overview() {
             <div>
               <p className="text-sm font-medium">Average Confidence Score</p>
               <p className="text-2xl font-bold">{averageConfidenceScore.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Average Detections</p>
+              <p className="text-2xl font-bold">{averageDetections.toFixed(1)}</p>
             </div>
           </div>
         </CardContent>

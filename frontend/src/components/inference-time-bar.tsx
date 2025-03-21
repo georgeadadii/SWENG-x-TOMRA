@@ -4,15 +4,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#878f99"];
 
 export default function InferenceTimeBar() {
   const [timeData, setTimeData] = useState([
-    { name: "Total Time", value: 0 },
     { name: "Inference Time", value: 0 },
     { name: "Preprocessing Time", value: 0 },
     { name: "Postprocessing Time", value: 0 },
+    { name: "Total Time", value: 0 },
   ]);
+  const [totalTime, setTotalTime] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,11 +26,10 @@ export default function InferenceTimeBar() {
           body: JSON.stringify({
             query: `
             query {
-              metrics {
-                totalInferenceTime
-                totalPostprocessingTime
-                totalPreprocessingTime
-                totalTime
+              imageMetrics {
+                inferenceTime
+                preprocessingTime
+                postprocessingTime
               }
             }
           `,
@@ -45,13 +45,23 @@ export default function InferenceTimeBar() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const data = result.data.metrics[0];
+        const rawData = result.data.imageMetrics;
+        if (!rawData || rawData.length === 0) {
+          throw new Error("No data available");
+        }
 
+        // Sum up times across all images
+        const totalPreprocessingTime = rawData.reduce((sum: number, img: any) => sum + img.preprocessingTime, 0);
+        const totalInferenceTime = rawData.reduce((sum: number, img: any) => sum + img.inferenceTime, 0);
+        const totalPostprocessingTime = rawData.reduce((sum: number, img: any) => sum + img.postprocessingTime, 0);
+        const total = totalPreprocessingTime + totalInferenceTime + totalPostprocessingTime;
+
+        setTotalTime(total);
         setTimeData([
-          { name: "Total Time", value: data.totalTime },
-          { name: "Inference Time", value: data.totalInferenceTime },
-          { name: "Preprocessing Time", value: data.totalPreprocessingTime },
-          { name: "Postprocessing Time", value: data.totalPostprocessingTime },
+          { name: "Inference Time", value: totalInferenceTime },
+          { name: "Preprocessing Time", value: totalPreprocessingTime },
+          { name: "Postprocessing Time", value: totalPostprocessingTime },
+          { name: "Total Time", value: total },
         ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -70,19 +80,21 @@ export default function InferenceTimeBar() {
     <Card className="w-full max-w-4xl">
       <CardHeader>
         <CardTitle>Time Performance Metrics</CardTitle>
-        <CardDescription>
-          Total inference time, postprocessing time, preprocessing time, and total time (ms)
-        </CardDescription>
+        <CardDescription>Breakdown of preprocessing, inference, and postprocessing times (ms)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium">Total Time</p>
+            <p className="text-2xl font-bold">{totalTime?.toFixed(2)} ms</p>
+          </div>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={timeData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={120}/>
-                <Tooltip />
+                <YAxis dataKey="name" type="category" width={150} />
+                <Tooltip formatter={(value) => `${Number(value).toFixed(2)} ms`} />
                 <Bar dataKey="value">
                   {timeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -94,7 +106,6 @@ export default function InferenceTimeBar() {
         </div>
       </CardContent>
     </Card>
-
   );
 }
 

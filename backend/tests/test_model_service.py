@@ -107,10 +107,13 @@ def test_store_metrics_in_cosmos_missing_field(model_service):
         "labels": ["label1", "label2"]
     }
 
+    batch_id = "1234"
+    task_type = "object_detection"
+
     model_service.cosmos_container.create_item.return_value = {"id": "0001"}
 
     with pytest.raises(ValueError) as exc_info:
-        model_service.store_metrics_in_cosmos(metrics_data)
+        model_service.store_metrics_in_cosmos(metrics_data, batch_id, task_type)
 
     assert "Missing required field" in str(exc_info.value)
 

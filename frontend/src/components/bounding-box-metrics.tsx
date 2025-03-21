@@ -100,13 +100,13 @@ export default function BoundingBoxMetrics() {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Average Bounding Box Size</p>
-            <p className="text-2xl font-bold">{averageBoxSize !== null ? averageBoxSize.toFixed(2) : "Loading..."} px²</p>
+            <p className="text-2xl font-bold">{averageBoxSize?.toFixed(2)} px</p>
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={distribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" />
+                <XAxis dataKey="range" tickFormatter={(value: string) => value.split(" - ")[0]} />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" fill="#ffc658" />

@@ -5,24 +5,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 type DetectionData = {
-  range: number;
+  range: string;
   count: number;
 };
-
-/*const mockData = [
-  { range: "0-2", count: 15 },
-  { range: "3-5", count: 30 },
-  { range: "6-8", count: 25 },
-  { range: "9-11", count: 20 },
-  { range: "12+", count: 10 },
-]*/
 
 export default function DetectionMetrics() {
   const [averageDetections, setAverageDetections] = useState<number | null>(null);
   const [detectionDistribution, setDetectionDistribution] = useState<DetectionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  //const averageDetections = 5.7
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,8 +24,8 @@ export default function DetectionMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              metrics {
-                detectionCountDistribution
+              imageMetrics {
+                labels
               }
             }
           `,
@@ -48,34 +40,51 @@ export default function DetectionMetrics() {
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-        const data = result.data.metrics[0];
 
-        // parse detection distribution
-        const detectionDist = JSON.parse(data.detectionCountDistribution || "{}");
+        const rawData = result.data?.imageMetrics || [];
 
-        const formattedDist = Object.entries(detectionDist).map(([range, count]) => ({
-          range: range as unknown as number,
-          count: count as number,
+        // Get number of detections per image
+        const detectionsPerImage = rawData.map((item: { labels: string[] }) => item.labels.length);
+
+        if (detectionsPerImage.length === 0) {
+          throw new Error("No detection data available");
+        }
+
+        // Compute average detections per image
+        const avgDetections = detectionsPerImage.reduce((sum: any, val: any) => sum + val, 0) / detectionsPerImage.length;
+        setAverageDetections(avgDetections);
+
+        // Determine dynamic number of bins
+        const numBins = Math.ceil(Math.log2(detectionsPerImage.length) + 1);
+        const maxDetections = Math.max(...detectionsPerImage);
+        const binSize = Math.ceil(maxDetections / numBins);
+
+        // Create bins dynamically
+        const bins: DetectionData[] = Array.from({ length: numBins }, (_, i) => ({
+          range: `${i * binSize}-${(i + 1) * binSize - 1}`,
+          count: 0,
         }));
 
-        setDetectionDistribution(formattedDist);
+        // Count occurrences in each bin
+        detectionsPerImage.forEach((count: number) => {
+          const index = Math.min(Math.floor(count / binSize), numBins - 1);
+          bins[index].count++;
+        });
 
-        // compute average detection
-        const totalDetections = formattedDist.reduce((sum, { count }) => sum + count, 0);
-        const weightedSum = formattedDist.reduce((sum, { range, count }) => sum + range * count, 0);
-        const averageDetections = totalDetections ? weightedSum / totalDetections : 0;
-        setAverageDetections(averageDetections);
+        setDetectionDistribution(bins);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
         setLoading(false);
       }
-      
     };
+
     fetchData();
   }, []);
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+
   return (
     <Card>
       <CardHeader>
@@ -86,13 +95,16 @@ export default function DetectionMetrics() {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Average Detections per Image</p>
-            <p className="text-2xl font-bold">{averageDetections !== null ? averageDetections.toFixed(1) : "Loading..."}</p>
+            <p className="text-2xl font-bold">{averageDetections?.toFixed(1)}</p>
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={detectionDistribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" />
+                <XAxis 
+                  dataKey="range"
+                  tickFormatter={(value: string) => value.split("-")[0]} // Show only first part of the range
+                />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" fill="#82ca9d" />
@@ -102,6 +114,7 @@ export default function DetectionMetrics() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
+
 

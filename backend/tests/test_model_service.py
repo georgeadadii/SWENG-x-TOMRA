@@ -76,10 +76,12 @@ def test_store_metrics_in_cosmos(model_service):
         "bbox_coordinates": ["0.2,0.2,0.2,0.2", "0.3,0.3,0.3,0.3"],
         "box_proportions": [0.5, 0.6]
     }
+    batch_id = "1234"
+    task_type = "object_detection"
 
     model_service.cosmos_container.create_item.return_value = {"id": "1234"}
 
-    result = model_service.store_metrics_in_cosmos(metrics_data)
+    result = model_service.store_metrics_in_cosmos(metrics_data, batch_id, task_type)
 
     assert result is True
 

@@ -110,7 +110,7 @@ export default function ConfidenceMetrics() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="shortRange" />
                 <YAxis />
-                <Tooltip formatter={(value, name, props) => [`${value}`, `Range: ${props.payload.fullRange}`]} />
+                <Tooltip />
                 <Bar dataKey="count" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>

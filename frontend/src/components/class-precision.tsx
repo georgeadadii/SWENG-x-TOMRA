@@ -8,15 +8,15 @@ import "katex/dist/katex.min.css";
 import katex from "katex";
 
 const LaTeXComponent = () => {
-  const latexString = "\\text{Precision} = \\frac{\\text{True Positives}}{\\text{True Positives} + \\text{False Positives}}";
+    const latexString = "\\text{Precision} = \\frac{\\text{True Positives}}{\\text{True Positives} + \\text{False Positives}}";
 
-  return (
-    <div
-      dangerouslySetInnerHTML={{
-        __html: katex.renderToString(latexString),
-      }}
-    />
-  );
+    return (
+        <div
+            dangerouslySetInnerHTML={{
+                __html: katex.renderToString(latexString),
+            }}
+        />
+    );
 };
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
@@ -28,10 +28,17 @@ type ChartData = {
 
 type AggregatedData = Record<string, { classifiedCount: number; reviewedCount: number }>;
 
+// Function to calculate the average precision
+const calculateAveragePrecision = (data: ChartData[]): number => {
+    const totalPrecision = data.reduce((sum, item) => sum + item.precision, 0);
+    return data.length > 0 ? totalPrecision / data.length : 0;
+};
+
 const ClassPrecision: React.FC = () => {
     const [results, setResults] = useState<ChartData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [averagePrecision, setAveragePrecision] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -40,15 +47,13 @@ const ClassPrecision: React.FC = () => {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        query: `
-              query {
-                results {
-                  classLabel
-                  classified
-                  reviewed
-                }
-              }
-            `,
+                        query: `query {
+                            results {
+                                classLabel
+                                classified
+                                reviewed
+                            }
+                        }`,
                     }),
                 });
 
@@ -79,7 +84,9 @@ const ClassPrecision: React.FC = () => {
                     precision: counts.reviewedCount > 0 ? parseFloat((counts.classifiedCount / counts.reviewedCount).toFixed(2)) : 0, // Avoid division by zero
                 }));
 
+                // Set results and calculate average precision
                 setResults(computedData);
+                setAveragePrecision(calculateAveragePrecision(computedData));
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to fetch data");
             } finally {
@@ -112,12 +119,18 @@ const ClassPrecision: React.FC = () => {
                                 It is defined as the ratio of correctly classified instances to the total instances that were predicted as a certain class:
                             </DialogDescription>
                         </DialogHeader>
-                        <LaTeXComponent/>
+                        <LaTeXComponent />
                     </DialogContent>
                 </Dialog>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
+                    <div>
+                        <p className="text-sm font-medium">Average Precision Score</p>
+                        <p className="text-2xl font-bold">
+                            {averagePrecision !== null ? averagePrecision.toFixed(2) : "Loading..."}
+                        </p>
+                    </div>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={results} margin={{ top: 10, right: 30, left: 10, bottom: 30 }}>

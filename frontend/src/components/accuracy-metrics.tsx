@@ -4,13 +4,27 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
+interface RawDataItem {
+  classLabel: string;
+  classified: boolean;
+  reviewed: boolean;
+}
+
+interface AggregatedData {
+  [key: string]: {
+    classifiedCount: number;
+    reviewedCount: number;
+  };
+}
+
 export default function AccuracyMetrics() {
   const [metrics, setMetrics] = useState([
     { name: "Accuracy", value: 0 },
-    { name: "Precision", value: 0 },
+    { name: "Average Precision", value: 0 },
     { name: "Recall", value: 0 },
     { name: "F1 Score", value: 0 },
   ]);
+  const [averagePrecision, setAveragePrecision] = useState<number | null>(null); // To store average precision
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +38,7 @@ export default function AccuracyMetrics() {
             query: `
             query {
               results {
+                classLabel
                 classified
                 reviewed
               }
@@ -41,20 +56,48 @@ export default function AccuracyMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const rawData = result.data.results;
+        const rawData: RawDataItem[] = result.data.results;
         if (!rawData || rawData.length === 0) {
           throw new Error("No data available");
         }
 
-        const classifiedCount = rawData.filter((img: any) => img.classified).length;
-        const reviewedCount = rawData.filter((img: any) => img.reviewed).length;
+        // Calculate accuracy 
+        const classifiedCount = rawData.filter((img) => img.classified).length;
+        const reviewedCount = rawData.filter((img) => img.reviewed).length;
         const accuracy = reviewedCount > 0 ? classifiedCount / reviewedCount : 0;
 
+        // Aggregate data by classLabel
+        const aggregatedData: AggregatedData = rawData.reduce(
+          (acc, item) => {
+            if (!acc[item.classLabel]) {
+              acc[item.classLabel] = { classifiedCount: 0, reviewedCount: 0 };
+            }
+            if (item.classified) acc[item.classLabel].classifiedCount++;
+            if (item.reviewed) acc[item.classLabel].reviewedCount++;
+            return acc;
+          },
+          {} as AggregatedData
+        );
+
+        // Compute precision for each class label
+        const computedMetrics = Object.entries(aggregatedData).map(([label, counts]) => ({
+          name: label,
+          value: counts.reviewedCount > 0 ? counts.classifiedCount / counts.reviewedCount : 0,
+        }));
+
+        // Calculate average precision (mean of individual precisions)
+        const avgPrecision =
+          computedMetrics.length > 0
+            ? computedMetrics.reduce((sum, item) => sum + item.value, 0) / computedMetrics.length
+            : 0;
+        setAveragePrecision(avgPrecision);
+
+        // Set metrics with calculated accuracy and average precision
         setMetrics([
           { name: "Accuracy", value: accuracy },
-          { name: "Precision", value: 0.82 },
-          { name: "Recall", value: 0.88 },
-          { name: "F1 Score", value: 0.85 },
+          { name: "Average Precision", value: avgPrecision },
+          { name: "Recall", value: 0.88 },  // Example value for recall
+          { name: "F1 Score", value: 0.85 },  // Example value for F1 score
         ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -101,4 +144,5 @@ export default function AccuracyMetrics() {
     </Card>
   );
 }
+
 

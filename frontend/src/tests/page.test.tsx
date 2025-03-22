@@ -1,5 +1,4 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-// import '@testing-library/jest-dom/extend-expect';
 import '@testing-library/jest-dom';
 import Home from "@/app/page";
 import { useRouter } from "next/navigation";
@@ -24,26 +23,14 @@ describe("Home page", () => {
     expect(push).toHaveBeenCalledWith("/dashboard/images");
   });
 
-//   it("displays dynamically generated tags", async () => {
-//     render(<Home />);
-    
-//     // Wait for the tags to appear after some time.
-//     // await waitFor(() => expect(screen.getAllByText(/Cat|Dog|Car|Tree|Building|Person|Bird/i)).toHaveLength(15));
-//     await waitFor(() => expect(screen.getAllByText(/Cat|Dog|Car|Tree|Building|Person|Bird/i)).toHaveLength(16));
-
-//     // Check that a random set of tags has been rendered.
-//     expect(screen.getByText(/Cat/i)).toBeInTheDocument();
-//   });
-
     it("displays dynamically generated tags", async () => {
         render(<Home />);
     
-        // Wait for the tags to appear after some time.
+        
         await waitFor(() => expect(screen.getAllByText(/Cat|Dog|Car|Tree|Building|Person|Bird/i)).toHaveLength(16));
     
-        // Check that a random set of tags has been rendered.
         const catTags = screen.getAllByText(/Cat/i);
-        expect(catTags.length).toBeGreaterThan(0); // Ensure at least one "Cat" tag is present
+        expect(catTags.length).toBeGreaterThan(0); 
   });
   
 

@@ -202,9 +202,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImageGrid from '../components/ImageGrid';
 import { MockedProvider } from '@apollo/client/testing';
 import '@testing-library/jest-dom';
+import React from 'react';
 
 jest.mock('../components/ImageGrid', () => {
-    return function MockImageGrid() {
+    return function MockImageGrid(props: any) {
         return (
             <div>
                 <img src="test-image.jpg" alt="Test" data-testid="image" />
@@ -220,7 +221,12 @@ describe('ImageGrid Component', () => {
     test('closes modal when clicking outside', async () => {
         render(
             <MockedProvider>
-                <ImageGrid />
+                <ImageGrid 
+                selectedLabels={[]} 
+                setSelectedLabels={() => {}} 
+                statusFilter="all" 
+                dateFilter="all"
+                />
             </MockedProvider>
         );
 

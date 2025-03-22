@@ -29,43 +29,51 @@ describe('ImageClassificationFilter Component', () => {
     expect(screen.getByText(/Image Classification Filters/i)).toBeInTheDocument();
     expect(screen.getByText(/Filter classification images based on various criteria/i)).toBeInTheDocument();
 
-    // Verify default dropdown labels and MultiSelect placeholder
-    expect(screen.getByText(/Any date/i)).toBeInTheDocument();
-    expect(screen.getByText(/All statuses/i)).toBeInTheDocument();
+    const anyDateButtons = screen.getAllByRole('button', { name: /Any date/i });
+    expect(anyDateButtons[0]).toBeInTheDocument();
+
+    const allStatusesButtons = screen.getAllByRole('button', { name: /All statuses/i });
+    expect(allStatusesButtons[0]).toBeInTheDocument();
+
+    // Check the multi-select placeholder.
     expect(screen.getByPlaceholderText(/Search labels.../i)).toBeInTheDocument();
   });
 
   test('updates date filter when an option is selected', async () => {
     render(<FilterWrapper />);
 
-    // Click the date dropdown trigger (initially displaying "Any date")
-    const dateDropdownTrigger = screen.getByText(/Any date/i);
+    // Retrieve the date dropdown trigger by disambiguating using getAllByRole.
+    const anyDateButtons = screen.getAllByRole('button', { name: /Any date/i });
+    const dateDropdownTrigger = anyDateButtons[0];
     fireEvent.click(dateDropdownTrigger);
 
-    // Click on the "Last 7 days" option
+    // Click on the "Last 7 days" option.
     const last7DaysOption = screen.getByText(/Last 7 days/i);
     fireEvent.click(last7DaysOption);
 
-    // Verify that the dropdown now displays "Last 7 days"
+    // Verify that the dropdown now displays "Last 7 days".
     await waitFor(() => {
-      expect(screen.getByText(/Last 7 days/i)).toBeInTheDocument();
+      const updatedDateButtons = screen.getAllByRole('button', { name: /Last 7 days/i });
+      expect(updatedDateButtons[0]).toBeInTheDocument();
     });
   });
 
   test('updates status filter when an option is selected', async () => {
     render(<FilterWrapper />);
 
-    // Click the status dropdown trigger (initially displaying "All statuses")
-    const statusDropdownTrigger = screen.getByText(/All statuses/i);
+    // Retrieve the status dropdown trigger by disambiguating using getAllByRole.
+    const allStatusesButtons = screen.getAllByRole('button', { name: /All statuses/i });
+    const statusDropdownTrigger = allStatusesButtons[0];
     fireEvent.click(statusDropdownTrigger);
 
-    // Click on the "Misclassified" option
+    // Click on the "Misclassified" option.
     const misclassifiedOption = screen.getByText(/Misclassified/i);
     fireEvent.click(misclassifiedOption);
 
-    // Verify that the dropdown now displays "Misclassified"
+    // Verify that the dropdown now displays "Misclassified".
     await waitFor(() => {
-      expect(screen.getByText(/Misclassified/i)).toBeInTheDocument();
+      const updatedStatusButtons = screen.getAllByRole('button', { name: /Misclassified/i });
+      expect(updatedStatusButtons[0]).toBeInTheDocument();
     });
   });
 });

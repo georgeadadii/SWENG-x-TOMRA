@@ -215,7 +215,29 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 print(f"Duplicate result detected for image: {metrics_data['image_url']}")
                 return False 
 
-            # Create a Cosmos DB item
+            bbox_dimensions = []
+            for bbox_str in metrics_data["bbox_coordinates"]:
+                try:
+                    bbox = [float(coord) for coord in bbox_str.split(",")]
+                    
+                    if len(bbox) != 4:
+                        print(f"Invalid bounding box format: {bbox_str}. Expected 4 values.")
+                        continue
+
+                    x_min, y_min, x_max, y_max = bbox
+                    width = x_max - x_min
+                    height = y_max - y_min
+                    bbox_dimensions.append({
+                        "width": width,
+                        "height": height,
+                        "coordinates": bbox  
+                    })
+
+                except Exception as e:
+                    print(f"Error processing bounding box {bbox_str}: {str(e)}")
+                    continue  
+
+            
             cosmos_item = {
                 "id": str(uuid.uuid4()),
                 "image_url": metrics_data["image_url"],
@@ -226,8 +248,9 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
                 "inference_time": metrics_data["inference_time"],
                 "postprocessing_time": metrics_data["postprocessing_time"],
                 "bbox_coordinates": metrics_data["bbox_coordinates"],
+                "bbox_dimensions": bbox_dimensions,
                 "box_proportions": metrics_data["box_proportions"],
-                "batch_id": batch_id,  
+                "batch_id": batch_id,   
                 "task_type": task_type,  
                 "classified_at": datetime.utcnow().isoformat()  
             }

@@ -94,7 +94,17 @@ export default function ImageClassificationMetrics() {
       </TabsContent>
 
       <TabsContent value="feedback" className="space-y-4">
-        <AccuracyMetrics />
+        <Tabs defaultValue="accuracy-overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="accuracy-overview">Metrics Overview</TabsTrigger>
+            <TabsTrigger value="precision">Precision</TabsTrigger>
+          </TabsList>
+          <TabsContent value="accuracy-overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <AccuracyMetrics />
+            </div>
+          </TabsContent>
+        </Tabs>
       </TabsContent>
     </Tabs>
   );

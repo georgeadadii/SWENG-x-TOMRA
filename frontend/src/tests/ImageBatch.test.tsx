@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import ImageBatch from '../components/ImageBatch';
+/// <reference types="@testing-library/jest-dom" />
 import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import ImageBatch from '@/components/ImageBatch';
 
 const sampleImages = [
   {
@@ -23,16 +24,16 @@ const sampleImages = [
   },
 ];
 
-describe('ImageBatch', () => {
+describe('ImageBatch Component', () => {
   const onClassify = jest.fn();
   const annotationStatus = {};
   const setHoveredIndex = jest.fn();
   const setSelectedImage = jest.fn();
 
-  const setup = () => {
-    render(
+  const setup = (images = sampleImages) => {
+    const { container } = render(
       <ImageBatch
-        images={sampleImages}
+        images={images}
         onClassify={onClassify}
         annotationStatus={annotationStatus}
         hoveredIndex={null}
@@ -40,6 +41,7 @@ describe('ImageBatch', () => {
         setSelectedImage={setSelectedImage}
       />
     );
+    return { container };
   };
 
   test('renders batch headers and images', () => {
@@ -52,7 +54,8 @@ describe('ImageBatch', () => {
 
   test('handles hover and click events', () => {
     setup();
-    const catContainer = screen.getByAltText('Cat').parentElement;
+    const catImage = screen.getByAltText('Cat');
+    const catContainer = catImage.parentElement;
     fireEvent.mouseEnter(catContainer!);
     expect(setHoveredIndex).toHaveBeenCalled();
     fireEvent.mouseLeave(catContainer!);
@@ -61,5 +64,10 @@ describe('ImageBatch', () => {
     expect(setSelectedImage).toHaveBeenCalledWith(
       expect.objectContaining({ imageUrl: 'https://example.com/image2.jpg' })
     );
+  });
+
+  test('displays "No images available" when image array is empty', () => {
+    const { container } = setup([]);
+    expect(container.querySelectorAll('img').length).toBe(0);
   });
 });

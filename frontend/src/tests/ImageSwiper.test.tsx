@@ -1,10 +1,9 @@
-import "@testing-library/jest-dom";
+/// <reference types="@testing-library/jest-dom" />
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ApolloProvider } from '@apollo/client';
 import { useQuery } from '@apollo/client';
 import ImageSwiper from '@/components/ImageSwiper';
 import mockClient from '__mocks__/apolloClient';
-
 
 jest.mock('@apollo/client', () => ({
   ...jest.requireActual('@apollo/client'),
@@ -98,7 +97,7 @@ describe('ImageSwiper Component', () => {
     expect(errorMessage).toBeInTheDocument();
   });
 
-  test('displays "No images available" when there are no images', () => {
+  test('displays "All images reviewed" when there are no images', () => {
     mockUseQuery.mockReturnValue({ data: { results: [] }, loading: false, error: null });
 
     render(
@@ -107,7 +106,7 @@ describe('ImageSwiper Component', () => {
       </ApolloProvider>
     );
 
-    const noImagesMessage = screen.getByText(/no images available/i);
+    const noImagesMessage = screen.getByText(/all images reviewed/i);
     expect(noImagesMessage).toBeInTheDocument();
   });
 });

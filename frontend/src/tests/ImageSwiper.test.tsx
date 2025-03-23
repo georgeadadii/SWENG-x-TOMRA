@@ -220,7 +220,6 @@ describe('ImageSwiper Component', () => {
       </ApolloProvider>
     );
 
-    // Update the expected text to match the current rendering
     const noImagesMessage = screen.getByText(/all images reviewed/i);
     expect(noImagesMessage).toBeInTheDocument();
   });

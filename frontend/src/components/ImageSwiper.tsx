@@ -2,12 +2,11 @@
 
 import { gql, useQuery, useMutation } from "@apollo/client"
 import client from "@/lib/apolloClient"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, AlertCircle, CircleHelp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog"
-import { Box } from "./ui/box"
 
 interface ImageData {
   imageUrl: string
@@ -61,6 +60,10 @@ export default function ImageSwiper() {
   const [direction, setDirection] = useState<"left" | "right" | null>(null)
   const [images, setImages] = useState<ImageData[]>([])
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  
+  // References to the buttons for adding/removing classes
+  const leftButtonRef = useRef<HTMLButtonElement>(null)
+  const rightButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     console.log("🚀 GraphQL Data Loaded:", data)
@@ -74,16 +77,47 @@ export default function ImageSwiper() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "a" || event.key === "ArrowLeft") {
+      if ((event.key === "a" || event.key === "ArrowLeft") && images.length > 0 && direction === null) {
+        // Add visual effect to the left button - RED GLOW
+        if (leftButtonRef.current) {
+          leftButtonRef.current.classList.add("bg-red-900/30", "border-red-500", "shadow-[0_0_15px_rgba(239,68,68,0.5)]")
+        }
         handleSwipe("left")
-      } else if (event.key === "d" || event.key === "ArrowRight") {
+      } else if ((event.key === "d" || event.key === "ArrowRight") && images.length > 0 && direction === null) {
+        // Add visual effect to the right button - GREEN GLOW
+        if (rightButtonRef.current) {
+          rightButtonRef.current.classList.add("bg-green-900/30", "border-green-500", "shadow-[0_0_15px_rgba(34,197,94,0.5)]")
+        }
         handleSwipe("right")
+      }
+    }
+    
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "a" || event.key === "ArrowLeft") {
+        // Remove visual effect from the left button
+        if (leftButtonRef.current) {
+          setTimeout(() => {
+            leftButtonRef.current?.classList.remove("bg-red-900/30", "border-red-500", "shadow-[0_0_15px_rgba(239,68,68,0.5)]")
+          }, 300)
+        }
+      } else if (event.key === "d" || event.key === "ArrowRight") {
+        // Remove visual effect from the right button
+        if (rightButtonRef.current) {
+          setTimeout(() => {
+            rightButtonRef.current?.classList.remove("bg-green-900/30", "border-green-500", "shadow-[0_0_15px_rgba(34,197,94,0.5)]")
+          }, 300)
+        }
       }
     }
   
     window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [images])
+    window.addEventListener("keyup", handleKeyUp)
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
+    }
+  }, [images, direction])
 
   const handleSwipe = async (swipeDirection: "left" | "right") => {
     if (images.length === 0) return
@@ -118,33 +152,34 @@ export default function ImageSwiper() {
   }
 
   return (
-    <><div className="mb-6 flex justify-between items-center">
-      <Dialog>
-        <DialogTrigger>
-          <Box variant="outline" size="icon">
-            <CircleHelp className="h-4 w-4" />
-          </Box>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>About the Image Swiper</DialogTitle>
-            <DialogDescription>
-              The image swiper allows you to review images efficiently by swiping left or right. You need to swipe
-              left when you see a misclassified image and right if you see an image with the right label.
-            </DialogDescription>
-
-          </DialogHeader>
-          <p className="my-4 text-sm">
-              Click the left arrow, or press the key "A" or the left arrow key on your keyboard to swipe left.
-          </p>
-          <p className="my-4 text-sm">
-              Click the right arrow, or press the key "D" or the right arrow key on your keyboard to swipe right.
-          </p>
-
-        </DialogContent>
-      </Dialog>
-
-    </div><div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg">
+    <>    
+      <div className="mb-4 flex justify-between items-center px-4 pt-4">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">Image Swiper</h2>
+        <Dialog>
+          <DialogTrigger>
+            <Button variant="outline" size="icon" className="border-purple-500/30 hover:bg-purple-900/20 transition-all">
+              <CircleHelp className="h-4 w-4 text-purple-300" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-gray-900 border-purple-500/30 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-purple-300">About the Image Swiper</DialogTitle>
+              <DialogDescription className="text-gray-300">
+                The image swiper allows you to review images efficiently by swiping left or right. You need to swipe
+                left when you see a misclassified image and right if you see an image with the right label.
+              </DialogDescription>
+            </DialogHeader>
+            <p className="my-4 text-sm text-gray-300">
+                Click the left arrow, or press the key "A" or the left arrow key on your keyboard to swipe left.
+            </p>
+            <p className="my-4 text-sm text-gray-300">
+                Click the right arrow, or press the key "D" or the right arrow key on your keyboard to swipe right.
+            </p>
+          </DialogContent>
+        </Dialog>
+      </div>
+    
+      <div className="flex flex-col items-center justify-center w-full h-full max-w-4xl mx-auto p-4 bg-gray-900/80 backdrop-blur-sm rounded-xl overflow-hidden relative border border-purple-500/20 shadow-lg shadow-purple-600/10">
         <AnimatePresence>
           {error && (
             <motion.div
@@ -154,7 +189,7 @@ export default function ImageSwiper() {
               transition={{ type: "spring", stiffness: 100, damping: 15 }}
               className="fixed left-1/2 transform -translate-x-1/2 z-50"
             >
-              <div className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+              <div className="bg-purple-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 border border-purple-500">
                 <AlertCircle className="w-5 h-5" />
                 <p className="text-sm font-semibold">Oops! We couldn't load the images.</p>
               </div>
@@ -163,25 +198,42 @@ export default function ImageSwiper() {
         </AnimatePresence>
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-40">
-            <div role="status" className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-900"></div>
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 z-40">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-t-2 border-b-2 border-purple-500 animate-spin"></div>
+              <div className="absolute inset-2 rounded-full border-r-2 border-l-2 border-blue-400 animate-spin animation-delay-150"></div>
+            </div>
           </div>
         )}
+        
+        {/* Background gradient effect */}
+        <div
+          className="absolute inset-0 opacity-30 z-0"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, rgba(138, 43, 226, 0.3), rgba(0, 0, 255, 0.2))`,
+            filter: 'blur(60px)',
+          }}
+        />
 
-        <div className="flex items-center justify-center w-full">
+        <div className="flex items-center justify-center w-full z-10">
           <Button
+            ref={leftButtonRef}
             onClick={() => handleSwipe("left")}
             disabled={direction !== null || images.length === 0}
             size="icon"
             variant="outline"
-            className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+            className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-900/30 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] bg-gray-800/40 border-red-500/30 text-red-300 
+            disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft aria-label="chevron-left" className="h-6 w-6" />
           </Button>
 
-          <div className="relative w-[300px] h-[400px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
+          <div className="relative w-[280px] h-[350px] flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-purple-500/30 shadow-[0_0_30px_rgba(138,43,226,0.15)]">
             {images.length === 0 && !loading ? (
-              <p className="text-gray-500 text-lg">🎉 All images reviewed!</p>
+              <div className="text-center p-4">
+                <p className="text-purple-300 text-lg mb-2">🎉 All images reviewed!</p>
+                <p className="text-gray-400 text-sm">Check back later for more images to classify</p>
+              </div>
             ) : (
               <AnimatePresence>
                 {images.slice(0, 1).map((image) => (
@@ -214,9 +266,17 @@ export default function ImageSwiper() {
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                       <p className="text-white text-lg font-bold">{image.classLabel}</p>
-                      <p className="text-gray-300 text-sm">
-                        Confidence: {(image.confidence * 100).toFixed(2)}%
-                      </p>
+                      <div className="flex items-center mt-1">
+                        <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full" 
+                            style={{ width: `${image.confidence * 100}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-gray-300 text-sm ml-2 min-w-[60px]">
+                          {(image.confidence * 100).toFixed(0)}%
+                        </p>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -225,15 +285,34 @@ export default function ImageSwiper() {
           </div>
 
           <Button
+            ref={rightButtonRef}
             onClick={() => handleSwipe("right")}
             disabled={direction !== null || images.length === 0}
             size="icon"
             variant="outline"
-            className="ml-4 transition-all duration-300 ease-in-out hover:bg-green-50 hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+            className="ml-4 transition-all duration-300 ease-in-out hover:bg-green-900/30 hover:border-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.5)] bg-gray-800/40 border-green-500/30 text-green-300
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-green-500/30 disabled:hover:shadow-none"
           >
             <ChevronRight aria-label="chevron-right" className="h-6 w-6" />
           </Button>
         </div>
-      </div></>
+        
+        {/* Instructions */}
+        <div className="mt-4 flex space-x-8 text-xs text-gray-400">
+          <div className="flex items-center">
+            <div className="w-6 h-6 flex items-center justify-center mr-2 bg-red-900/20 border border-red-500/30 rounded">
+              <span className="text-red-300">A</span>
+            </div>
+            <span>Misclassified</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-6 h-6 flex items-center justify-center mr-2 bg-green-900/20 border border-green-500/30 rounded">
+              <span className="text-green-300">D</span>
+            </div>
+            <span>Correct</span>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

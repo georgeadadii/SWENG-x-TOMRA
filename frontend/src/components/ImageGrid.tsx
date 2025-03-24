@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageBatch from "@/components/ImageBatch";
 import type { Option } from "@/components/ui/multi-select";
 import { ImageClassificationFilter } from "./filter";
-
+import { motion } from "framer-motion";
 
 interface ImageData {
     imageUrl: string;
@@ -40,7 +40,6 @@ const STORE_FEEDBACK = gql`
   }
 `;
 
-
 type StatusFilter = 'all' | 'correct' | 'misclassified' | 'not reviewed';
 type DateFilter = 'today' | 'yesterday' | 'last7days' | 'last30days'|'all';
 
@@ -53,6 +52,7 @@ function daysFromToday(targetDate: string): number {
 
     return diffInDays;
 }
+
 const ImageGrid: FC<{ 
     selectedLabels: Option[], 
     setSelectedLabels: (labels: Option[]) => void,
@@ -86,8 +86,6 @@ const ImageGrid: FC<{
             setAnnotationStatus(newStatus);
         }
     }, [data]); // Runs whenever `data` changes
-
-
 
     const uniqueImages = useMemo(() => {
         const seen = new Set();
@@ -137,7 +135,6 @@ const ImageGrid: FC<{
         }) || [];
     }, [data, selectedLabels, statusFilter, dateFilter]);
 
-
     const handleFeedback = async (imageUrl: string, isCorrect: boolean) => {
         const status = isCorrect ? "correct" : "incorrect";
 
@@ -160,99 +157,207 @@ const ImageGrid: FC<{
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const item = {
+        hidden: { y: 20, opacity: 0 },
+        show: { y: 0, opacity: 1 }
+    };
+
     return (
-        <Tabs defaultValue="grid" className="space-y-4">
-            <TabsList className="flex gap-4 border-b">
-                <TabsTrigger value="grid">Overview</TabsTrigger>
-                <TabsTrigger value="batch">Batch View</TabsTrigger>
-            </TabsList>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <Tabs defaultValue="grid" className="w-full">
+                <div className="border-b border-gray-200">
+                    <TabsList className="flex p-0 bg-transparent">
+                        <TabsTrigger 
+                            value="grid" 
+                            className="px-6 py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none"
+                        >
+                            Overview
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="batch"
+                            className="px-6 py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none"
+                        >
+                            Batch View
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
-            {/* Image Grid View */}
-            <TabsContent value="grid">
-                {loading && <p>Loading...</p>}
-                {error && <p>Error: {error.message}</p>}
-                {!loading && !error && (
-                    <div className="w-full h-screen overflow-y-auto p-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-                        {uniqueImages.map((image, index) => (
-                            <div
-                                key={index}
-                                className={`relative cursor-pointer transition-transform overflow-hidden flex items-center justify-center bg-transparent rounded-lg ${
-                                    hoveredIndex === index ? "scale-105 shadow-lg" : "scale-100"
-                                }`}
-                                onMouseEnter={() => setHoveredIndex(index)}
-                                onMouseLeave={() => setHoveredIndex(null)}
-                                onClick={() => setSelectedImage(image)}
-                            >
-                                <img src={image.imageUrl} alt={image.classLabel} className="w-full h-full object-cover aspect-square" />
+                {/* Image Grid View */}
+                <TabsContent value="grid" className="p-0 m-0">
+                    {loading && (
+                        <div className="w-full h-64 flex items-center justify-center">
+                            <div className="flex flex-col items-center space-y-4">
+                                <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                                <p className="text-gray-500 font-medium">Loading images...</p>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </TabsContent>
+                        </div>
+                    )}
+                    
+                    {error && (
+                        <div className="w-full h-64 flex items-center justify-center">
+                            <div className="bg-red-50 text-red-500 p-4 rounded-lg max-w-md border border-red-100">
+                                <h3 className="font-semibold text-lg mb-2">Error Loading Images</h3>
+                                <p>{error.message}</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {!loading && !error && (
+                        <motion.div 
+                            className="w-full h-[calc(100vh-320px)] overflow-y-auto p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 auto-rows-[200px]"
+                            variants={container}
+                            initial="hidden"
+                            animate="show"
+                        >
+                            {uniqueImages.length === 0 ? (
+                                <div className="col-span-full h-64 flex items-center justify-center">
+                                    <p className="text-gray-500 text-lg">No images match your filter criteria</p>
+                                </div>
+                            ) : (
+                                uniqueImages.map((image, index) => (
+                                    <motion.div
+                                        key={index}
+                                        variants={item}
+                                        className={`relative cursor-pointer overflow-hidden rounded-lg ${
+                                            hoveredIndex === index ? "ring-4 ring-blue-400 ring-opacity-50" : "ring-1 ring-gray-200"
+                                        }`}
+                                        onMouseEnter={() => setHoveredIndex(index)}
+                                        onMouseLeave={() => setHoveredIndex(null)}
+                                        onClick={() => setSelectedImage(image)}
+                                        style={{
+                                            backgroundImage: `url(${image.imageUrl})`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: 'center'
+                                        }}
+                                    >
+                                        <div className={`absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-200 ${
+                                            hoveredIndex === index ? 'opacity-100' : 'opacity-0'
+                                        }`}>
+                                            <p className="text-white font-medium truncate">{image.classLabel}</p>
+                                            <div className="flex items-center mt-1">
+                                                <span className="text-xs text-white/80">
+                                                    {(image.confidence * 100).toFixed(0)}% confidence
+                                                </span>
+                                                {annotationStatus[image.imageUrl] && (
+                                                    <span className={`ml-auto px-2 py-0.5 text-xs rounded-full ${
+                                                        annotationStatus[image.imageUrl] === "correct" 
+                                                            ? "bg-green-500/20 text-green-50"
+                                                            : "bg-red-500/20 text-red-50"
+                                                    }`}>
+                                                        {annotationStatus[image.imageUrl] === "correct" ? "Correct" : "Incorrect"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </motion.div>
+                    )}
+                </TabsContent>
 
-            {/* Batch View */}
-            <TabsContent value="batch">
-                <ImageBatch 
-                    images={uniqueImages} 
-                    onClassify={handleFeedback} 
-                    annotationStatus={annotationStatus} 
-                    hoveredIndex={hoveredIndex}
-                    setHoveredIndex={setHoveredIndex}
-                    setSelectedImage={setSelectedImage}
-                />
-            </TabsContent>
+                {/* Batch View */}
+                <TabsContent value="batch" className="p-0 m-0">
+                    <ImageBatch 
+                        images={uniqueImages} 
+                        onClassify={handleFeedback} 
+                        annotationStatus={annotationStatus} 
+                        hoveredIndex={hoveredIndex}
+                        setHoveredIndex={setHoveredIndex}
+                        setSelectedImage={setSelectedImage}
+                    />
+                </TabsContent>
+            </Tabs>
 
-            {/* Image Modal */}
+            {/* Image Modal - with backdrop blur and smoother animation */}
             {selectedImage && (
-                <div
-                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50"
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
                     onClick={() => setSelectedImage(null)}
                 >
-                    <div
-                        className="bg-white p-6 rounded-lg shadow-lg text-center max-w-lg"
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="bg-white rounded-xl shadow-xl overflow-hidden max-w-lg w-full mx-4"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <img
-                            src={selectedImage.imageUrl}
-                            alt={selectedImage.classLabel}
-                            className="max-w-full max-h-96 object-contain rounded-md mb-4 w-auto h-auto"
-                        />
-                        <p className="text-lg font-semibold text-black">AI Tag: {selectedImage.classLabel}</p>
-                        <p className="text-sm text-black">Confidence: {selectedImage.confidence.toFixed(2)}</p>
-
-                        {/* Display classification status */}
-                        <p className="mt-3 text-sm font-semibold text-gray-700">
-                            {annotationStatus[selectedImage.imageUrl]
-                                ? `✅ Previously annotated as ${annotationStatus[selectedImage.imageUrl]}`
-                                : "❗ Not yet classified"}
-                        </p>
-
-                        <div className="mt-4 flex justify-center gap-4">
-                            <button
-                                className={`px-4 py-2 rounded-lg ${
-                                    annotationStatus[selectedImage.imageUrl] === "correct"
-                                        ? "bg-green-600 text-white"
-                                        : "bg-green-500 text-white hover:bg-green-600"
-                                }`}
-                                onClick={() => handleFeedback(selectedImage.imageUrl, true)}
+                        <div className="relative">
+                            <img
+                                src={selectedImage.imageUrl}
+                                alt={selectedImage.classLabel}
+                                className="w-full h-64 object-cover"
+                            />
+                            <button 
+                                onClick={() => setSelectedImage(null)}
+                                className="absolute top-4 right-4 bg-black/50 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
                             >
-                                Correct
-                            </button>
-                            <button
-                                className={`px-4 py-2 rounded-lg ${
-                                    annotationStatus[selectedImage.imageUrl] === "incorrect"
-                                        ? "bg-red-600 text-white"
-                                        : "bg-red-500 text-white hover:bg-red-600"
-                                }`}
-                                onClick={() => handleFeedback(selectedImage.imageUrl, false)}
-                            >
-                                Incorrect
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </button>
                         </div>
-                    </div>
-                </div>
+
+                        <div className="p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-1">
+                                {selectedImage.classLabel}
+                            </h3>
+                            
+                            <div className="flex items-center mb-4">
+                                <span className="text-sm text-gray-500">
+                                    Confidence: {(selectedImage.confidence * 100).toFixed(2)}%
+                                </span>
+                                {annotationStatus[selectedImage.imageUrl] && (
+                                    <span className={`ml-auto px-2 py-1 text-xs font-medium rounded-full ${
+                                        annotationStatus[selectedImage.imageUrl] === "correct" 
+                                            ? "bg-green-100 text-green-800"
+                                            : "bg-red-100 text-red-800"
+                                    }`}>
+                                        {annotationStatus[selectedImage.imageUrl] === "correct" ? "Correct" : "Incorrect"}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                                        annotationStatus[selectedImage.imageUrl] === "correct"
+                                            ? "bg-green-600 text-white"
+                                            : "bg-green-100 text-green-800 hover:bg-green-600 hover:text-white"
+                                    }`}
+                                    onClick={() => handleFeedback(selectedImage.imageUrl, true)}
+                                >
+                                    Correct
+                                </button>
+                                <button
+                                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                                        annotationStatus[selectedImage.imageUrl] === "incorrect"
+                                            ? "bg-red-600 text-white"
+                                            : "bg-red-100 text-red-800 hover:bg-red-600 hover:text-white"
+                                    }`}
+                                    onClick={() => handleFeedback(selectedImage.imageUrl, false)}
+                                >
+                                    Incorrect
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
             )}
-        </Tabs>
+        </div>
     );
 };
 

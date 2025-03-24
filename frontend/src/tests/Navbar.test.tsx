@@ -11,8 +11,7 @@ describe('Navbar Component', () => {
     expect(logo).toHaveAttribute('src', expect.stringContaining('logo.png'));
   });
   
-
-  it('renders navigation links', () => {
+  it('renders navigation links with correct hrefs', () => {
     render(<Navbar />);
     const links = ['Products', 'About', 'Support'];
     links.forEach((text) => {
@@ -22,20 +21,17 @@ describe('Navbar Component', () => {
     });
   });
 
-  // it('changes opacity on hover', () => {
-  //   render(<Navbar />);
+  it('does not change opacity on hover (current design)', () => {
+    render(<Navbar />);
+    const productsLink = screen.getByRole('link', { name: /Products/i });
     
-  //   const productsLink = screen.getByRole('link', { name: /Products/i });
-  
-  //   // Check if the initial opacity class is applied (if you use opacity-80 for the initial state)
-  //   expect(productsLink).toHaveClass('opacity-80');
+    expect(productsLink).toHaveClass('no-underline', 'text-white', 'text-base', 'font-bold');
     
-  //   // Simulate hover over the link and check for opacity change (opacity-100 or similar class for hover)
-  //   fireEvent.mouseEnter(productsLink);
-  //   expect(productsLink).toHaveClass('opacity-100');
+    // Simulate hover
+    fireEvent.mouseEnter(productsLink);
+    expect(productsLink).toHaveClass('no-underline', 'text-white', 'text-base', 'font-bold');
     
-  //   // Simulate mouse leave and check for opacity reset to opacity-80
-  //   fireEvent.mouseLeave(productsLink);
-  //   expect(productsLink).toHaveClass('opacity-80');
-  // });
+    fireEvent.mouseLeave(productsLink);
+    expect(productsLink).toHaveClass('no-underline', 'text-white', 'text-base', 'font-bold');
+  });
 });

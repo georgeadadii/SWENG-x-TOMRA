@@ -33,6 +33,9 @@ secret = secret_client.get_secret("COSMOS-DATABASE-NAME")
 DATABASE_NAME = secret.value
 secret = secret_client.get_secret("COSMOS-CONTAINER-NAME")
 CONTAINER_NAME = secret.value
+#print("COSMOS_ENDPOINT:", COSMOS_ENDPOINT)
+#print("COSMOS_KEY:", COSMOS_KEY)
+
 
 # Initialize CosmosDB Client
 if not all([COSMOS_ENDPOINT, COSMOS_KEY, DATABASE_NAME, CONTAINER_NAME]):

@@ -1,4 +1,4 @@
-<img src="docs/SixSense_Logo.png" alt="SixSense Logo"/>
+<img src="docs/SixSense_Logo_stroke.png" alt="SixSense Logo"/>
 
 ## Near Real-Time Image Classification Engine
 

@@ -25,9 +25,6 @@ setup:
     - virtualenv venv
     - source venv/bin/activate
     - pip install -r <(grep -v -E "torch|torchvision|ultralytics" $BACKEND_DIR/requirements.txt)
-  artifacts:
-    paths:
-      - venv/
   cache:
     paths:
       - venv/

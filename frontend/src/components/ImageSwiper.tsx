@@ -1,21 +1,24 @@
-"use client"
+"use client";
 
-import { gql, useQuery, useMutation } from "@apollo/client"
-import client from "@/lib/apolloClient"
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { ChevronLeft, ChevronRight, AlertCircle, CircleHelp } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog"
-import { Box } from "./ui/box"
+import { gql, useQuery, useMutation } from "@apollo/client";
+import client from "@/lib/apolloClient";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, AlertCircle, CircleHelp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Box } from "./ui/box";
+import { Dropdown, DropdownItem } from "@/components/ui/dropdown";
 
 interface ImageData {
-  imageUrl: string
-  classLabel: string
-  confidence: number
-  classified: boolean
-  misclassified: boolean
-  reviewed?: boolean
+  imageUrl: string;
+  classLabel: string;
+  confidence: number;
+  classified: boolean;
+  misclassified: boolean;
+  reviewed?: boolean;
+  batchId?: string;
+  createdAt?: string; 
 }
 
 const GET_IMAGES = gql`
@@ -27,50 +30,35 @@ const GET_IMAGES = gql`
       classified
       misclassified
       reviewed
+      batchId
     }
   }
-`
+`;
 
 const STORE_FEEDBACK = gql`
-  mutation StoreFeedback(
-    $imageUrl: String!
-    $classified: Boolean
-    $misclassified: Boolean
-    $reviewed: Boolean
-  ) {
-    storeFeedback(
-      imageUrl: $imageUrl
-      classified: $classified
-      misclassified: $misclassified
-      reviewed: $reviewed
-    )
+  mutation StoreFeedback($imageUrl: String!, $classified: Boolean, $misclassified: Boolean, $reviewed: Boolean) {
+    storeFeedback(imageUrl: $imageUrl, classified: $classified, misclassified: $misclassified, reviewed: $reviewed)
   }
-`
+`;
+
 
 export default function ImageSwiper() {
-  const { data, loading, error, refetch } = useQuery<{ results?: ImageData[] }>(GET_IMAGES, {
+  const { data, loading, error } = useQuery<{ results?: ImageData[] }>(GET_IMAGES, {
     client,
-    onError: (err) => console.error("❌ GraphQL Query Error:", err),
-  })
+    onError: (err) => console.error("GraphQL Query Error:", err),
+  });
 
   const [storeFeedback] = useMutation(STORE_FEEDBACK, {
     client,
-    onError: (err) => console.error("❌ Mutation Error:", err),
-  })
+    onError: (err) => console.error("Mutation Error:", err),
+  });
 
-  const [direction, setDirection] = useState<"left" | "right" | null>(null)
-  const [images, setImages] = useState<ImageData[]>([])
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [direction, setDirection] = useState<"left" | "right" | null>(null);
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [batchFilter, setBatchFilter] = useState<string>("all");
+  const [availableBatches, setAvailableBatches] = useState<{ value: string; label: string }[]>([]);
 
-  useEffect(() => {
-    console.log("🚀 GraphQL Data Loaded:", data)
-
-    if (data?.results) {
-      const unreviewed = data.results.filter((img) => img.reviewed !== true)
-      console.log("✅ Unreviewed Images:", unreviewed)
-      setImages(unreviewed)
-    }
-  }, [data])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -85,66 +73,108 @@ export default function ImageSwiper() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [images])
 
+  
+useEffect(() => {
+  if (data?.results) {
+
+    //Grouping images by batchId and sorting batches by creation date
+    const groupedImages = data.results.reduce((acc, image) => {
+      const batchId = image.batchId || "uncategorized";
+      if (!acc[batchId]) {
+        acc[batchId] = [];
+      }
+      acc[batchId].push(image);
+      return acc;
+    }, {} as Record<string, ImageData[]>);
+
+    //Sorting by createdAt
+    const sortedBatches = Object.entries(groupedImages).sort((a, b) => {
+      const dateA = new Date(a[1][0]?.createdAt || 0).getTime();
+      const dateB = new Date(b[1][0]?.createdAt || 0).getTime();
+      return dateA - dateB;
+    });
+
+  
+    const batchOptions = [
+      { value: "all", label: "All batches" },
+      ...sortedBatches.map(([batchId], index) => ({
+        value: batchId,
+        label: `Batch ${index + 1}`,
+      })),
+    ];
+
+    setAvailableBatches(batchOptions);
+   
+    let filteredImages = data.results.filter((img) => img.reviewed !== true);
+    if (batchFilter !== "all") {
+      filteredImages = filteredImages.filter((img) => img.batchId === batchFilter);
+    }
+    setImages(filteredImages);
+  }
+}, [data, batchFilter]);
+
+
   const handleSwipe = async (swipeDirection: "left" | "right") => {
-    if (images.length === 0) return
-
-    const currentImage = images[0]
-    console.log(`🖼 Swiping ${swipeDirection} →`, currentImage)
-
-    const classified = swipeDirection === "right"
-    const misclassified = swipeDirection === "left"
+    if (images.length === 0) return;
+    const currentImage = images[0];
+    const classified = swipeDirection === "right";
+    const misclassified = swipeDirection === "left";
 
     try {
-      const response = await storeFeedback({
-        variables: {
-          imageUrl: currentImage.imageUrl,
-          classified,
-          misclassified,
-          reviewed: true,
-        },
-      })
-      console.log("✅ Feedback stored:", response.data)
+      await storeFeedback({
+        variables: { imageUrl: currentImage.imageUrl, classified, misclassified, reviewed: true },
+      });
     } catch (err) {
-      console.error("❌ Failed to store feedback:", err)
+      console.error("Failed to store feedback:", err);
     }
 
-    setDirection(swipeDirection)
-
+    setDirection(swipeDirection);
     setTimeout(() => {
-      setDirection(null)
-      setImages((prev) => (prev.length > 1 ? prev.slice(1) : []))
-      setActiveImageIndex((prev) => prev + 1)
-    }, 400)
-  }
+      setDirection(null);
+      setImages((prev) => (prev.length > 1 ? prev.slice(1) : []));
+      setActiveImageIndex((prev) => prev + 1);
+    }, 400);
+  };
 
   return (
-    <><div className="mb-6 flex justify-between items-center">
-      <Dialog>
-        <DialogTrigger>
-          <Box variant="outline" size="icon">
-            <CircleHelp className="h-4 w-4" />
-          </Box>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>About the Image Swiper</DialogTitle>
-            <DialogDescription>
-              The image swiper allows you to review images efficiently by swiping left or right. You need to swipe
-              left when you see a misclassified image and right if you see an image with the right label.
-            </DialogDescription>
+    <>
+      <div className="mb-6 flex justify-between items-center w-full">
+        {/* Dropdown for selecting batch filter */}
+        <Dropdown
+          trigger={
+            <Box variant="outline" className="w-[200px] justify-between">
+              <span className="text-sm truncate">
+                {batchFilter !== "all" ? `Filtering: ${batchFilter}` : "Filter by Batch"}
+              </span>
+            </Box>
+          }
+        >
+          {availableBatches.map((filter) => (
+            <DropdownItem key={filter.value} onClick={() => setBatchFilter(filter.value)}>
+              {filter.label}
+            </DropdownItem>
+          ))}
+        </Dropdown>
 
-          </DialogHeader>
-          <p className="my-4 text-sm">
-              Click the left arrow, or press the key "A" or the left arrow key on your keyboard to swipe left.
-          </p>
-          <p className="my-4 text-sm">
-              Click the right arrow, or press the key "D" or the right arrow key on your keyboard to swipe right.
-          </p>
+        <Dialog>
+          <DialogTrigger>
+            <Box variant="outline" size="icon">
+              <CircleHelp className="h-4 w-4" />
+            </Box>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>About the Image Swiper</DialogTitle>
+              <DialogDescription>
+                The image swiper lets you review images by swiping left for misclassified and right for correctly
+                classified images.
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-        </DialogContent>
-      </Dialog>
-
-    </div><div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg">
+      <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg">
         <AnimatePresence>
           {error && (
             <motion.div
@@ -169,15 +199,15 @@ export default function ImageSwiper() {
         )}
 
         <div className="flex items-center justify-center w-full">
-          <Button
-            onClick={() => handleSwipe("left")}
-            disabled={direction !== null || images.length === 0}
-            size="icon"
-            variant="outline"
-            className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
-          >
-            <ChevronLeft aria-label="chevron-left" className="h-6 w-6" />
-          </Button>
+        <Button
+          onClick={() => handleSwipe("left")}
+          disabled={direction !== null || images.length === 0}
+          size="icon"
+          variant="outline"
+          className="mr-4 transition-all duration-300 ease-in-out hover:bg-red-50 hover:border-red-500 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
+        >
+          <ChevronLeft aria-label="chevron-left" className="h-6 w-6" />
+        </Button>
 
           <div className="relative w-[300px] h-[400px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
             {images.length === 0 && !loading ? (
@@ -189,34 +219,14 @@ export default function ImageSwiper() {
                     key={`${image.imageUrl}-${activeImageIndex}`}
                     className="absolute w-full h-full overflow-hidden rounded-xl"
                     initial={{ scale: 1, y: 0, opacity: 0 }}
-                    animate={{
-                      scale: 1,
-                      y: 0,
-                      opacity: 1,
-                      x: direction ? (direction === "right" ? 1000 : -1000) : 0,
-                    }}
-                    exit={{
-                      x: direction === "right" ? 1000 : -1000,
-                      opacity: 0,
-                      rotateY: direction === "right" ? 45 : -45,
-                      transition: { duration: 0.4, ease: "easeInOut" },
-                    }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    exit={{ x: direction === "right" ? 1000 : -1000, opacity: 0 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
                   >
-                    <img
-                      src={image.imageUrl || "/placeholder.svg"}
-                      alt={image.classLabel}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = "/placeholder.svg"
-                      }}
-                    />
+                    <img src={image.imageUrl || "/placeholder.svg"} alt={image.classLabel} className="w-full h-full object-cover" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                       <p className="text-white text-lg font-bold">{image.classLabel}</p>
-                      <p className="text-gray-300 text-sm">
-                        Confidence: {(image.confidence * 100).toFixed(2)}%
-                      </p>
+                      <p className="text-gray-300 text-sm">Confidence: {(image.confidence * 100).toFixed(2)}%</p>
                     </div>
                   </motion.div>
                 ))}
@@ -234,6 +244,7 @@ export default function ImageSwiper() {
             <ChevronRight aria-label="chevron-right" className="h-6 w-6" />
           </Button>
         </div>
-      </div></>
-  )
+      </div>
+    </>
+  );
 }

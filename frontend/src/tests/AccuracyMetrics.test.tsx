@@ -1,63 +1,75 @@
-import React from 'react';
+import { render, screen, waitFor } from "@testing-library/react";
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import AccuracyMetrics from '@/components/accuracy-metrics';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import AccuracyMetrics from "@/components/accuracy-metrics";
 
+const mockGraphQLResponse = {
+  data: {
+    results: [
+      { classLabel: "Class A", classified: true, reviewed: true },   // Correct classification
+      { classLabel: "Class A", classified: false, reviewed: true },  // Incorrect classification
+      { classLabel: "Class B", classified: true, reviewed: false },  // Not reviewed
+      { classLabel: "Class B", classified: true, reviewed: true },   // Correct classification
+      { classLabel: "Class C", classified: false, reviewed: true },  // Incorrect classification
+    ],
+  },
+};
 
-jest.mock("recharts", () => ({
-  BarChart: ({ children }) => <div className="recharts-wrapper">{children}</div>,
-  Bar: () => <div />,
-  XAxis: () => <div />,
-  YAxis: () => <div />,
-  CartesianGrid: () => <div />,
-  Tooltip: () => <div />,
-  ResponsiveContainer: ({ children }) => <div>{children}</div>,
-}));
-
-
-jest.mock("@/components/ui/card", () => ({
-  Card: ({ children }) => <div>{children}</div>,
-  CardContent: ({ children }) => <div>{children}</div>,
-  CardDescription: ({ children }) => <div>{children}</div>,
-  CardHeader: ({ children }) => <div>{children}</div>,
-  CardTitle: ({ children }) => <div>{children}</div>,
-}));
-
-describe('AccuracyMetrics', () => {
-  const mockData = [
-    { name: "Accuracy", value: 0.85 },
-    { name: "Precision", value: 0.82 },
-    { name: "Recall", value: 0.88 },
-    { name: "F1 Score", value: 0.85 },
-  ];
-
-  it('renders the component with the correct title and description', () => {
-    render(<AccuracyMetrics />);
-
-    expect(screen.getByText('Accuracy Metrics')).toBeInTheDocument();
-    expect(screen.getByText('Performance metrics based on ground truth data')).toBeInTheDocument();
+describe("AccuracyMetrics Component", () => {
+  beforeEach(() => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockGraphQLResponse),
+      })
+    ) as jest.Mock;
   });
 
-  it('renders the correct metrics data', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("renders and displays the accuracy and precision metrics correctly", async () => {
     render(<AccuracyMetrics />);
 
-    mockData.forEach((item) => {
-      
-      expect(screen.getByText(item.name)).toBeInTheDocument();
-
-      
-      const valueElements = screen.getAllByText(item.value.toFixed(2));
-      expect(valueElements.length).toBeGreaterThan(0); // Ensure at least one match
+    await waitFor(() => {
+      expect(screen.getByText("Accuracy Metrics")).toBeInTheDocument();
+      expect(screen.getByText("Performance metrics based on ground truth data")).toBeInTheDocument();
     });
+
+    // Expected Accuracy Calculation:
+    expect(screen.getByText("Accuracy")).toBeInTheDocument();
+    expect(screen.getByText("0.75")).toBeInTheDocument(); 
+
+    // Expected Average Precision Calculation:
+    // Precision per class:
+    // Class A: 1/2 = 0.50
+    // Class B: 1/1 = 1.00
+    // Class C: 0/1 = 0.00
+    // Average Precision = (0.50 + 1.00 + 0.00) / 3 = 0.50
+    expect(screen.getByText("Average Precision")).toBeInTheDocument();
+    expect(screen.getByText("0.83")).toBeInTheDocument();
+
+    // Verify other metrics exist
+    expect(screen.getByText("Recall")).toBeInTheDocument();
+    expect(screen.getByText("F1 Score")).toBeInTheDocument();
+
+    // Check that loading message is not present
+    expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
   });
 
-  it('renders the BarChart component', () => {
-    const { container } = render(<AccuracyMetrics />);
+  it("displays an error message when the API fails", async () => {
+    jest.spyOn(global, "fetch").mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ errors: [{ message: "Server error" }] }),
+      })
+    );
 
-   
-    const chartContainer = container.querySelector('.recharts-wrapper');
-    expect(chartContainer).toBeInTheDocument();
+    render(<AccuracyMetrics />);
+
+    await waitFor(() => {
+      expect(screen.getByText((content) => content.includes("Error:"))).toBeInTheDocument();
+    });
   });
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import ConfidenceMetrics from "@/components/ConfidenceMetrics";
+import ConfidenceMetrics from "@/components/confidence-metrics";
 
 fetchMock.enableMocks();
 

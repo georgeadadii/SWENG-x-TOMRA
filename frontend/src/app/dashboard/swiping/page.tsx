@@ -9,17 +9,18 @@ const roboto = Roboto({ subsets: ["latin"], weight: ["400", "700"] });
 const SwipingPage: React.FC = () => {
   return (
     <div className={`flex h-screen w-full bg-black ${roboto.className} overflow-hidden`}>
-      {/* Background gradient effect */}
+      {/* Background gradient effect - lighter and more purple */}
       <div
-        className="absolute inset-0 opacity-30"
+        className="fixed inset-0 opacity-40"
         style={{
-          background: `radial-gradient(circle at 50% 30%, rgba(138, 43, 226, 0.8), rgba(0, 0, 255, 0.8))`,
+          background: `radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.6), rgba(139, 92, 246, 0.6))`,
           filter: 'blur(100px)',
+          zIndex: 0
         }}
       />
       
-      <div className="flex-grow flex items-center justify-center relative z-10 p-0 sm:p-4 h-full">
-        <div className="w-full max-w-4xl bg-transparent overflow-hidden">
+      <div className="flex-grow flex items-center justify-center relative z-10 p-6 h-full w-full bg-transparent rounded-full">
+        <div className="w-full max-w-4xl bg-transparent overflow-hidden rounded-3xl shadow-lg shadow-purple-400/20">
           <ImageSwiper />
         </div>
       </div>

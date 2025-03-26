@@ -101,7 +101,7 @@ export default function inferenceTimeMetrics() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>inference Time Metrics</CardTitle>
+        <CardTitle>Inference Time Metrics</CardTitle>
         <CardDescription>Distribution of inference times (ms)</CardDescription>
       </CardHeader>
       <CardContent>

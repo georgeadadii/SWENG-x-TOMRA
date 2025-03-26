@@ -1,4 +1,4 @@
-<img src="docs/SixSense_Logo.png" alt="SixSense Logo"/>
+<img src="docs/SixSense_Logo_stroke.png" alt="SixSense Logo"/>
 
 ## Near Real-Time Image Classification Engine
 
@@ -12,6 +12,7 @@
 - **Performance Monitoring**: Continuously track the performance of the classification engine.
 - **User Feedback Mechanism**: Allow users to provide feedback on misclassifications to improve model accuracy.
 - **Hybrid Deployment**: Deploy the classification engine across both edge and cloud environments.
+- **Secure Secret Management**: Utilize Azure Key Vault for secure storage and retrieval of sensitive credentials and keys.
 
 ### Functional Requirements
 
@@ -44,8 +45,9 @@ The system architecture consists of the following components:
 2. **Neo4j Graph Database**: Stores Azure Blob Storage image URLs, classification results, and other classification metadata
 3. **Cosmos DB**: Receives and stores per-image metrics from the processing pipeline
 4. **Next.js Frontend**: Displays data and collects user feedback, communicating with both databases
+5. **Azure Key Vault**: Central secure storage for all sensitive credentials and secrets used by other components
 
-The following diagram shows the different components of the product we are aiming for. The goal is to have our local model service process images selected by users, communicating with a Neo4j graph database for storing image references and classification results. Metrics for each processed image are sent to Cosmos DB, while the Next.js frontend pulls data from both databases to display results and collect user feedback, which is then stored back in Neo4j.
+The following diagram shows the different components of the product we are aiming for. The goal is to have our local model service process images selected by users, communicating with a Neo4j graph database for storing image references and classification results. Metrics for each processed image are sent to Cosmos DB, while the Next.js frontend pulls data from both databases to display results and collect user feedback, which is then stored back in Neo4j. Azure Key Vault serves as the central security component that all other services authenticate with to retrieve necessary credentials.
 
 We plan to achieve this architecture incrementally by first simulating locally the processing pipeline using sample images and a local Neo4j instance. Then we will test the integration with Azure Blob Storage and Cosmos DB when we feel comfortable moving to cloud-based resources.
 

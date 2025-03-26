@@ -213,7 +213,7 @@ class ModelService(model_service_pb2_grpc.ModelServiceServicer):
 
             if existing_items:
                 print(f"Duplicate result detected for image: {metrics_data['image_url']}")
-                return False 
+                return True 
 
             bbox_dimensions = []
             for bbox_str in metrics_data["bbox_coordinates"]:

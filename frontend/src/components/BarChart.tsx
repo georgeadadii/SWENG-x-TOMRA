@@ -2,14 +2,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 // Define the correct type for fetched data
 type ChartData = {
-  classLabel: string;
+  label: string;
   confidence: number;
 };
+
+type AggregatedData = Record<string, { label: string; totalConfidence: number; count: number }>;
 
 const ClassConfidence: React.FC = () => {
   const [results, setResults] = useState<ChartData[]>([]);
@@ -25,9 +26,9 @@ const ClassConfidence: React.FC = () => {
           body: JSON.stringify({
             query: `
               query {
-                results {
-                  classLabel
-                  confidence
+                imageMetrics {
+                  labels
+                  confidences
                 }
               }
             `,
@@ -37,31 +38,39 @@ const ClassConfidence: React.FC = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-    
+
         const result = await response.json();
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-    
-        const rawData: ChartData[] = result.data?.results || [];
-    
-        // Group by `classLabel` and compute the average confidence
-        const aggregatedData = rawData.reduce((acc, item) => {
-          if (!acc[item.classLabel]) {
-            acc[item.classLabel] = { classLabel: item.classLabel, totalConfidence: 0, count: 0 };
+
+        // Assuming `labels` is an array of labels and `confidences` is an array of corresponding confidence values
+        const rawData = result.data?.imageMetrics || [];
+
+        // Flatten the labels and confidences into one array of objects with their respective values
+        const flattenedData: ChartData[] = rawData.flatMap((item: { labels: string[]; confidences: number[] }) =>
+          item.labels.map((label, index) => ({
+            label,
+            confidence: item.confidences[index],
+          }))
+        );
+
+        // Group by `label` and calculate the average confidence for each label
+        const aggregatedData: AggregatedData = flattenedData.reduce((acc, item) => {
+          if (!acc[item.label]) {
+            acc[item.label] = { label: item.label, totalConfidence: 0, count: 0 };
           }
-          acc[item.classLabel].totalConfidence += item.confidence;
-          acc[item.classLabel].count ++;
+          acc[item.label].totalConfidence += item.confidence;
+          acc[item.label].count++;
           return acc;
-        }, {} as Record<string, { classLabel: string; totalConfidence: number; count: number }>);
-    
-        // Convert grouped object to array with averages
-        const averagedData = Object.values(aggregatedData).map((group) => ({
-          classLabel: group.classLabel,
-          // Calculate average to 2 decimal places
-          confidence: parseFloat((group.totalConfidence / group.count).toFixed(2)), 
+        }, {} as AggregatedData);
+
+        // Convert the aggregated data to an array with averages
+        const averagedData: ChartData[] = Object.values(aggregatedData).map((group) => ({
+          label: group.label,
+          confidence: parseFloat((group.totalConfidence / group.count).toFixed(2)), // Average confidence
         }));
-    
+
         setResults(averagedData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -84,12 +93,11 @@ const ClassConfidence: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={results}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="classLabel" />
+                <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="confidence" fill="#8884d8" />
@@ -103,4 +111,6 @@ const ClassConfidence: React.FC = () => {
 };
 
 export default ClassConfidence;
+
+
 

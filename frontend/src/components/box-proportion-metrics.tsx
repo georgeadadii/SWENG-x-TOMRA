@@ -10,7 +10,7 @@ type BoxData = {
 };
 
 export default function BoxProportionMetrics() {
-  const [averageBoxSize, setAverageBoxSize] = useState<number | null>(null);
+  const [averageBoxProportion, setAverageBoxProportion] = useState<number | null>(null);
   const [distribution, setDistribution] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +24,8 @@ export default function BoxProportionMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              metrics {
-                averageBoxProportion
-                boxProportionDistribution
+              imageMetrics {
+                boxProportions
               }
             }
           `,
@@ -41,17 +40,38 @@ export default function BoxProportionMetrics() {
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-        const data = result.data.metrics[0];
 
-        const dist = JSON.parse(data.boxProportionDistribution || "{}");
+        const rawData = result.data?.imageMetrics || [];
 
-        const formattedDist = Object.entries(dist).map(([range, count]) => ({
-          range: range as string,
-          count: count as number,
+        // Flatten the proportions (as one image may have multiple values)
+        const allProportions: number[] = rawData.flatMap((item: { boxProportions: number[] }) =>
+          item.boxProportions
+        );
+
+        if (allProportions.length === 0) {
+          throw new Error("No box proportion data available");
+        }
+
+        // Define fixed number of bins (10)
+        const maxProportion = Math.max(...allProportions);
+        const binSize = maxProportion / 10;
+
+        const bins: BoxData[] = Array.from({ length: 10 }, (_, i) => ({
+          range: `${((i * binSize) * 100).toFixed(1)}% - ${(((i + 1) * binSize) * 100).toFixed(1)}%`,
+          count: 0,
         }));
 
-        setDistribution(formattedDist);
-        setAverageBoxSize(data.averageBoxProportion*100);
+        // Count occurrences in each bin
+        allProportions.forEach((proportion) => {
+          const index = Math.min(Math.floor(proportion / binSize), 9);
+          bins[index].count++;
+        });
+
+        // Compute average box proportion
+        const avgProportion = (allProportions.reduce((sum, val) => sum + val, 0) / allProportions.length) * 100;
+
+        setDistribution(bins);
+        setAverageBoxProportion(avgProportion);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -75,7 +95,7 @@ export default function BoxProportionMetrics() {
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Average Bounding Box Proportion</p>
-            <p className="text-2xl font-bold">{averageBoxSize?.toFixed(2)} %</p>
+            <p className="text-2xl font-bold">{averageBoxProportion?.toFixed(2)} %</p>
           </div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">

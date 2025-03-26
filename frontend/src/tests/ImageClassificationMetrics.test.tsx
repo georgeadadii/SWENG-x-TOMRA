@@ -3,6 +3,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ImageClassificationMetrics from "@/components/image-classification-metrics";
 
+jest.mock("katex/dist/katex.min.css", () => {});
+
 describe("ImageClassificationMetrics", () => {
   it("renders the component without crashing", () => {
     render(<ImageClassificationMetrics />);

@@ -3,7 +3,6 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import DetectionMetrics from "@/components/detection-metrics";
 
-
 jest.mock("recharts", () => ({
   BarChart: jest.fn(({ children }) => <div data-testid="bar-chart">{children}</div>),
   Bar: jest.fn(() => <div data-testid="bar" />),
@@ -23,16 +22,12 @@ describe("DetectionMetrics Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
-                {
-                  detectionCountDistribution: JSON.stringify({
-                    "0": 5,  // 5 detections in range "0"
-                    "1": 10, // 10 detections in range "1"
-                    "2": 15, // 15 detections in range "2"
-                    "3": 20, // 20 detections in range "3"
-                    "4": 25, // 25 detections in range "4"
-                  }),
-                },
+              imageMetrics: [
+                { labels: ["A", "B", "C"] }, // 3 detections
+                { labels: ["A"] }, // 1 detection
+                { labels: ["B", "C", "D", "E"] }, // 4 detections
+                { labels: [] }, // 0 detections
+                { labels: ["A", "B"] }, // 2 detections
               ],
             },
           }),
@@ -65,10 +60,7 @@ describe("DetectionMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
-   
-    const totalDetections = 5 + 10 + 15 + 20 + 25; 
-    const weightedSum = 0 * 5 + 1 * 10 + 2 * 15 + 3 * 20 + 4 * 25; 
-    const expectedAverage = (weightedSum / totalDetections).toFixed(1); 
+    const expectedAverage = ((3 + 1 + 4 + 0 + 2) / 5).toFixed(1); // 2.0
 
     expect(screen.getByText("Average Detections per Image")).toBeInTheDocument();
     expect(screen.getByText(expectedAverage)).toBeInTheDocument();

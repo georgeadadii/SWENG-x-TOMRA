@@ -4,16 +4,9 @@ import BoxProportionMetrics from "@/components/box-proportion-metrics"; // Adjus
 
 const mockGraphQLResponse = {
   data: {
-    metrics: [
+    imageMetrics: [
       {
-        averageBoxProportion: 0.25,
-        boxProportionDistribution: JSON.stringify({
-          "0-20": 10,
-          "21-40": 20,
-          "41-60": 30,
-          "61-80": 25,
-          "81-100": 15,
-        }),
+        boxProportions: [0.1, 0.25, 0.4, 0.35, 0.8, 0.5, 0.15, 0.9, 0.75, 0.6],
       },
     ],
   },
@@ -43,7 +36,7 @@ describe("BoxProportionMetrics Component", () => {
     );
 
     // Check the actual average box proportion value
-    expect(screen.getByText("25.00 %")).toBeInTheDocument(); // 0.25 * 100 = 25.00%
+    expect(screen.getByText("48.00 %")).toBeInTheDocument(); // (0.1 + 0.25 + 0.4 + 0.35 + 0.8 + 0.5 + 0.15 + 0.9 + 0.75 + 0.6) / 10 * 100 = 50.00%
 
     // Ensure that "Loading..." text disappears once data is loaded
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -66,4 +59,22 @@ describe("BoxProportionMetrics Component", () => {
       expect(screen.getByText("Error: HTTP error! Status: 500")).toBeInTheDocument()
     );
   });  
+
+  /*it("displays the chart with correct distribution", async () => {
+    render(<BoxProportionMetrics />);
+
+    // Wait for the chart to load and check if a bar chart is rendered
+    await waitFor(() => {
+      expect(screen.getByRole("graphics-symbol")).toBeInTheDocument(); // Ensures the bar chart is rendered
+    });
+    
+    // Check if bars exist in the chart for bounding box proportions
+    expect(screen.getByText("0.0% - 10.0%")).toBeInTheDocument();
+    expect(screen.getByText("10.0% - 20.0%")).toBeInTheDocument();
+    expect(screen.getByText("20.0% - 30.0%")).toBeInTheDocument();
+    expect(screen.getByText("30.0% - 40.0%")).toBeInTheDocument();
+    expect(screen.getByText("40.0% - 50.0%")).toBeInTheDocument();
+  });*/
 });
+
+

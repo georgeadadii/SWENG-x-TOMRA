@@ -100,6 +100,30 @@ python model_client.py --quantize
 
 Go to http://localhost:8000/graphql
 
+To query all per-image metrics, use the following GraphQL query:
+
+```graphql
+query {
+  imageMetrics {
+    id
+    imageUrl
+    topLabel
+    labels
+    confidences
+    preprocessingTime
+    inferenceTime
+    postprocessingTime
+    bboxCoordinates
+    boxProportions
+		Rid
+    Self
+    Etag
+    Attachments
+    Ts
+  }
+}
+```
+
 To query all metrics, use the following GraphQL query:
 
 ```graphql

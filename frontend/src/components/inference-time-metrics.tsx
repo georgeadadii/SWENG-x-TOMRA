@@ -4,14 +4,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
-type BoxData = {
+type inferenceData = {
   range: string;
   count: number;
 };
 
-export default function InferenceTimeMetrics() {
+export default function inferenceTimeMetrics() {
   const [averageTime, setAverageTime] = useState<number | null>(null);
-  const [distribution, setDistribution] = useState<BoxData[]>([]);
+  const [distribution, setDistribution] = useState<inferenceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,9 +24,8 @@ export default function InferenceTimeMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              metrics {
-                averageInferenceTime
-                inferenceTimeDistribution
+              imageMetrics {
+                inferenceTime
               }
             }
           `,
@@ -41,17 +40,51 @@ export default function InferenceTimeMetrics() {
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-        const data = result.data.metrics[0];
 
-        const dist = JSON.parse(data.inferenceTimeDistribution || "{}");
+        const inferenceTimes: number[] = result.data.imageMetrics.flatMap((img: any) => img.inferenceTime);
 
-        const formattedDist = Object.entries(dist).map(([range, count]) => ({
-          range: range as string,
-          count: count as number,
+        if (inferenceTimes.length === 0) {
+          throw new Error("No inference time data available");
+        }
+
+        // Calculate average inference time
+        const total = inferenceTimes.reduce((sum, time) => sum + time, 0);
+        setAverageTime(total / inferenceTimes.length);
+
+        // Dynamically calculate the number of bins
+        const minTime = Math.min(...inferenceTimes);
+        const maxTime = Math.max(...inferenceTimes);
+
+        // Dynamically calculate bin size for exactly 10 bins
+        const numBins = 10;
+        const binSize = (maxTime - minTime) / numBins; // Bin size for 10 bins
+
+        const bins: { [key: string]: number } = {};
+        for (let i = 0; i < numBins; i++) {
+          const binStart = minTime + i * binSize;
+          const binEnd = binStart + binSize;
+          const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
+          bins[binLabel] = 0; // Initialize count as 0 for each bin
+        }
+
+        // Populate bins with counts
+        inferenceTimes.forEach((time) => {
+          const binIndex = Math.floor((time - minTime) / binSize);
+          if (binIndex < numBins) {
+            const binStart = minTime + binIndex * binSize;
+            const binEnd = binStart + binSize;
+            const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
+            bins[binLabel] = (bins[binLabel] || 0) + 1; // Increment count for the corresponding bin
+          }
+        });
+
+        // Convert bins to array format for Recharts
+        const formattedDist = Object.entries(bins).map(([range, count]) => ({
+          range,
+          count,
         }));
 
         setDistribution(formattedDist);
-        setAverageTime(data.averageInferenceTime);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
@@ -81,9 +114,16 @@ export default function InferenceTimeMetrics() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={distribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" tickFormatter={(value: string) => value.split("-")[0]} />
+                <XAxis
+                  dataKey="range"
+                  tickFormatter={(value: string) => {
+                    // Format the tick to display with 2 decimals
+                    const start = parseFloat(value.split("-")[0]);
+                    return start.toFixed(2);
+                  }}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip/>
                 <Line type="monotone" dataKey="count" stroke="#8884d8" />
               </LineChart>
             </ResponsiveContainer>
@@ -93,5 +133,7 @@ export default function InferenceTimeMetrics() {
     </Card>
   );
 }
+
+
 
 

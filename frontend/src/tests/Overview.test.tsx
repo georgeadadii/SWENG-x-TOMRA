@@ -16,13 +16,12 @@ const mockFetchSuccess = () =>
     json: () =>
       Promise.resolve({
         data: {
-          metrics: [
+          imageMetrics: [
             {
-              totalImages: 100,
-              averageConfidenceScore: 0.85,
-              averagePreprocessTime: 200,
-              averageInferenceTime: 300,
-              averagePostprocessTime: 100,
+              confidences: [0.9, 0.8, 0.7],
+              preprocessingTime: 100,
+              inferenceTime: 200,
+              postprocessingTime: 300,
             },
           ],
         },
@@ -40,7 +39,6 @@ describe("Overview Component", () => {
     expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
   });
 
-
   it("renders error state when fetch fails", async () => {
     global.fetch.mockImplementation(mockFetchFailure);
 
@@ -53,7 +51,6 @@ describe("Overview Component", () => {
     });
   });
 
-
   it("renders the metrics correctly after data is fetched", async () => {
     global.fetch.mockImplementation(mockFetchSuccess);
 
@@ -62,34 +59,33 @@ describe("Overview Component", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("100")).toBeInTheDocument();
-      expect(screen.getByText("0.85")).toBeInTheDocument();
-      expect(screen.getByText("200.00 ms")).toBeInTheDocument();
-      expect(screen.getByText("300.00 ms")).toBeInTheDocument();
-      expect(screen.getByText("100.00 ms")).toBeInTheDocument();
+      expect(screen.getByText("1")).toBeInTheDocument(); // 1 total image
+      expect(screen.getByText("0.80")).toBeInTheDocument(); // Average confidence score
+      expect(screen.getByText("3.0")).toBeInTheDocument(); // Average detections
+      expect(screen.getByText("100.00 ms")).toBeInTheDocument(); // Preprocessing time
+      expect(screen.getByText("200.00 ms")).toBeInTheDocument(); // Inference time
+      expect(screen.getByText("300.00 ms")).toBeInTheDocument(); // Postprocessing time
     });
   });
 
-  
   it("renders the bar chart with correct percentages", async () => {
     global.fetch.mockImplementation(mockFetchSuccess);
-  
+
     await act(async () => {
       render(<Overview />);
     });
-  
+
     await waitFor(() => {
-      
       const bars = document.querySelectorAll("div.h-full.flex-shrink-0[style*='width']");
-  
-      expect(bars.length).toBe(3); 
-      expect(bars[0].style.width).toBe("33.33333333333333%");
-      expect(bars[1].style.width).toBe("50%"); 
-      expect(bars[2].style.width).toBe("16.666666666666664%"); 
+
+      expect(bars.length).toBe(3);
+      expect(bars[0].style.width).toBe("16.666666666666664%"); // Preprocessing
+      expect(bars[1].style.width).toBe("33.33333333333333%"); // Inference
+      expect(bars[2].style.width).toBe("50%"); // Postprocessing
     });
   });
-  
 });
+
 
 
 

@@ -101,13 +101,13 @@ export default function preprocessingTimeMetrics() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>preprocessing Time Metrics</CardTitle>
+        <CardTitle>Preprocessing Time Metrics</CardTitle>
         <CardDescription>Distribution of preprocessing times (ms)</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium">Average preprocessing Time</p>
+            <p className="text-sm font-medium">Average Preprocessing Time</p>
             <p className="text-2xl font-bold">{averageTime?.toFixed(2)} ms</p>
           </div>
           <div className="h-[200px]">

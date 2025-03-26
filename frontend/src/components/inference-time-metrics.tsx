@@ -107,7 +107,7 @@ export default function inferenceTimeMetrics() {
       <CardContent>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-medium">Average inference Time</p>
+            <p className="text-sm font-medium">Average Inference Time</p>
             <p className="text-2xl font-bold">{averageTime?.toFixed(2)} ms</p>
           </div>
           <div className="h-[200px]">

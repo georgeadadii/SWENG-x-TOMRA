@@ -68,7 +68,7 @@ describe("InferenceTimeMetrics Component", () => {
     // Manually calculate expected average
     const expectedAverage = (30 + 45 + 55 + 70 + 90 + 120 + 150 + 180) / 8;
 
-    expect(screen.getByText("Average inference Time")).toBeInTheDocument();
+    expect(screen.getByText("Average Inference Time")).toBeInTheDocument();
     expect(screen.getByText(`${expectedAverage.toFixed(2)} ms`)).toBeInTheDocument();
   });
 

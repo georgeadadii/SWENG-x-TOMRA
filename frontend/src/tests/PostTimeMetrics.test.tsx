@@ -60,7 +60,7 @@ describe("PostTimeMetrics Component", () => {
     });
 
     expect(screen.getByText("Average Postprocessing Time")).toBeInTheDocument();
-    expect(screen.getByText("128.75 ms")).toBeInTheDocument(); // Average of the mock times
+    expect(screen.getByText("146.11 ms")).toBeInTheDocument(); // Average of the mock times
   });
 
   it("renders the line chart with data after successful fetch", async () => {

@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import PreTimeMetrics from "@/components/pre-time-metrics";
 
-
+// Mock recharts components
 jest.mock("recharts", () => ({
   LineChart: jest.fn(({ children }) => <div data-testid="line-chart">{children}</div>),
   Line: jest.fn(() => <div data-testid="line" />),
@@ -23,16 +23,9 @@ describe("PreTimeMetrics Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
+              imageMetrics: [
                 {
-                  averagePreprocessTime: 65.32,
-                  preprocessTimeDistribution: JSON.stringify({
-                    "0-50": 15,
-                    "51-100": 22,
-                    "101-150": 18,
-                    "151-200": 10,
-                    "201+": 5,
-                  }),
+                  preprocessingTime: [50, 75, 120, 130, 200, 210, 190, 160, 180], // Mock array of preprocessing times
                 },
               ],
             },
@@ -66,8 +59,8 @@ describe("PreTimeMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Average Preprocess Time")).toBeInTheDocument();
-    expect(screen.getByText("65.32 ms")).toBeInTheDocument();
+    expect(screen.getByText("Average Preprocessing Time")).toBeInTheDocument();
+    expect(screen.getByText("146.11 ms")).toBeInTheDocument(); // Average of the mock times
   });
 
   it("renders the line chart with data after successful fetch", async () => {
@@ -97,7 +90,7 @@ describe("PreTimeMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Preprocess Time Metrics")).toBeInTheDocument();
-    expect(screen.getByText("Distribution of Preprocess times (ms)")).toBeInTheDocument();
+    expect(screen.getByText("Preprocessing Time Metrics")).toBeInTheDocument();
+    expect(screen.getByText("Distribution of preprocessing times (ms)")).toBeInTheDocument();
   });
 });

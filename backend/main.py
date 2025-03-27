@@ -5,7 +5,45 @@ from datetime import datetime
 from strawberry.fastapi import GraphQLRouter
 from neo4j import GraphDatabase
 from fastapi.middleware.cors import CORSMiddleware
+from azure.cosmos import CosmosClient
 import json
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+from azure.identity import ClientSecretCredential
+from azure.keyvault.secrets import SecretClient
+
+env_path = Path("..") / ".env"  # Go up one level to the root directory
+load_dotenv(dotenv_path=env_path)
+
+# cosmosDB access
+TENANT_ID = os.getenv("AZURE_TENANT_ID")
+CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
+
+KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
+credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
+secret_client = SecretClient(vault_url=KEY_VAULT_URL, credential=credential)
+
+secret = secret_client.get_secret("COSMOS-ENDPOINT")
+COSMOS_ENDPOINT = secret.value
+secret = secret_client.get_secret("COSMOS-KEY")
+COSMOS_KEY = secret.value
+secret = secret_client.get_secret("COSMOS-DATABASE-NAME")
+DATABASE_NAME = secret.value
+secret = secret_client.get_secret("COSMOS-CONTAINER-NAME")
+CONTAINER_NAME = secret.value
+#print("COSMOS_ENDPOINT:", COSMOS_ENDPOINT)
+#print("COSMOS_KEY:", COSMOS_KEY)
+
+
+# Initialize CosmosDB Client
+if not all([COSMOS_ENDPOINT, COSMOS_KEY, DATABASE_NAME, CONTAINER_NAME]):
+            raise ValueError("Missing one or more required environment variables.")
+cosmos_client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
+database = cosmos_client.get_database_client(DATABASE_NAME)
+container = database.get_container_client(CONTAINER_NAME)
+
 
 # Define a custom scalar for JSON data
 @strawberry.scalar
@@ -21,6 +59,26 @@ class JSONScalar:
     @staticmethod
     def parse_literal(ast) -> Dict[str, Any]:
         return json.loads(ast.value)
+
+
+# Define a GraphQL type that matches CosmosDB data
+@strawberry.type
+class ImageMetricsType:
+    id: str
+    image_url: str
+    top_label: str
+    labels: List[str]
+    confidences: List[float]
+    preprocessing_time: float
+    inference_time: float
+    postprocessing_time: float
+    bbox_coordinates: List[str]
+    box_proportions: List[float]
+    _rid: str
+    _self: str
+    _etag: str
+    _attachments: str
+    _ts: int
 
 # Define a GraphQL type that matches Neo4j data with additional image_url field
 @strawberry.type
@@ -119,8 +177,36 @@ def get_results(batch_id: str = None) -> List[ResultType]:
             for record in result        
         ]
         
+# Fetch data from cosmosDB
+def get_image_metrics() -> List[Dict[str, Any]]:
+    """
+    Fetches data from CosmosDB.
+    """
+    query = "SELECT * FROM c"
+    # Modify this query as needed
+    items = list(container.query_items(query=query, enable_cross_partition_query=True))
+    return [
+        ImageMetricsType(
+            id=item["id"],
+            image_url=item["image_url"],
+            top_label=item["top_label"],
+            labels=item["labels"],
+            confidences=item["confidences"],
+            preprocessing_time=item["preprocessing_time"],
+            inference_time=item["inference_time"],
+            postprocessing_time=item["postprocessing_time"],
+            bbox_coordinates=item["bbox_coordinates"],
+            box_proportions=item["box_proportions"],
+            _rid=item["_rid"],
+            _self=item["_self"],
+            _etag=item["_etag"],
+            _attachments=item["_attachments"],
+            _ts=item["_ts"],
+        )
+        for item in items
+    ]
 
-
+# ------- Old metrics -------
 def get_metrics() -> List[MetricsType]:
     """
     Queries the Neo4j database for all nodes with label 'Metrics'
@@ -213,6 +299,10 @@ class Query:
     @strawberry.field
     def metrics(self) -> List[MetricsType]:
         return get_metrics()    
+    
+    @strawberry.field
+    def image_metrics(self) -> List[ImageMetricsType]:
+        return get_image_metrics()
     
 @strawberry.type
 class Mutation:

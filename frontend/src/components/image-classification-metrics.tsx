@@ -15,6 +15,7 @@ import BoxProportionMetrics from "./box-proportion-metrics";
 import PreTimeMetrics from "./pre-time-metrics";
 import PostTimeMetrics from "./post-time-metrics";
 import Overview from "./Overview";
+import ClassPrecision from "./class-precision";
 
 interface OverviewCardProps {
   title: string;
@@ -94,7 +95,22 @@ export default function ImageClassificationMetrics() {
       </TabsContent>
 
       <TabsContent value="feedback" className="space-y-4">
-        <AccuracyMetrics />
+        <Tabs defaultValue="accuracy-overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="accuracy-overview">Metrics Overview</TabsTrigger>
+            <TabsTrigger value="precision">Precision</TabsTrigger>
+          </TabsList>
+          <TabsContent value="accuracy-overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <AccuracyMetrics />
+            </div>
+          </TabsContent>
+          <TabsContent value="precision" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+              <ClassPrecision />
+            </div>
+          </TabsContent>
+        </Tabs>
       </TabsContent>
     </Tabs>
   );

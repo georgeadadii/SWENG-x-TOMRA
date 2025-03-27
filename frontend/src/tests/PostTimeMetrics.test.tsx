@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import PostTimeMetrics from "@/components/post-time-metrics";
 
-
+// Mock recharts components
 jest.mock("recharts", () => ({
   LineChart: jest.fn(({ children }) => <div data-testid="line-chart">{children}</div>),
   Line: jest.fn(() => <div data-testid="line" />),
@@ -23,16 +23,9 @@ describe("PostTimeMetrics Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
+              imageMetrics: [
                 {
-                  averagePostprocessTime: 78.45,
-                  postprocessTimeDistribution: JSON.stringify({
-                    "0-50": 12,
-                    "51-100": 25,
-                    "101-150": 18,
-                    "151-200": 7,
-                    "201+": 4,
-                  }),
+                  postprocessingTime: [50, 75, 120, 130, 200, 210, 190, 160, 180], // Mock array of postprocessing times
                 },
               ],
             },
@@ -66,8 +59,8 @@ describe("PostTimeMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Average Postprocess Time")).toBeInTheDocument();
-    expect(screen.getByText("78.45 ms")).toBeInTheDocument();
+    expect(screen.getByText("Average Postprocessing Time")).toBeInTheDocument();
+    expect(screen.getByText("146.11 ms")).toBeInTheDocument(); // Average of the mock times
   });
 
   it("renders the line chart with data after successful fetch", async () => {
@@ -97,7 +90,7 @@ describe("PostTimeMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Postprocess Time Metrics")).toBeInTheDocument();
-    expect(screen.getByText("Distribution of Postprocess times (ms)")).toBeInTheDocument();
+    expect(screen.getByText("Postprocessing Time Metrics")).toBeInTheDocument();
+    expect(screen.getByText("Distribution of postprocessing times (ms)")).toBeInTheDocument();
   });
 });

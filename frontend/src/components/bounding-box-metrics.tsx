@@ -5,24 +5,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 type BoxData = {
-  range: number;
+  range: string;
   count: number;
 };
 
-/*const mockData = [
-  { range: "0-100", count: 10 },
-  { range: "101-200", count: 20 },
-  { range: "201-300", count: 30 },
-  { range: "301-400", count: 25 },
-  { range: "401+", count: 15 },
-]*/
 export default function BoundingBoxMetrics() {
-  //const averageSize = 250
   const [averageBoxSize, setAverageBoxSize] = useState<number | null>(null);
   const [distribution, setDistribution] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  //const averageDetections = 5.7
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,9 +24,8 @@ export default function BoundingBoxMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              metrics {
-                averageBoxSize
-                boxSizeDistribution
+              imageMetrics {
+                bboxCoordinates
               }
             }
           `,
@@ -49,30 +40,56 @@ export default function BoundingBoxMetrics() {
         if (result.errors) {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
-        const data = result.data.metrics[0];
 
-        // parse distribution
-        const dist = JSON.parse(data.boxSizeDistribution || "{}");
+        const rawData = result.data?.imageMetrics || [];
 
-        const formattedDist = Object.entries(dist).map(([range, count]) => ({
-          range: range as unknown as number,
-          count: count as number,
+        // Extract bounding box areas
+        const allBoxSizes: number[] = rawData.flatMap((item: { bboxCoordinates: string[] }) =>
+          item.bboxCoordinates.map((coordStr) => {
+            const coords = coordStr.split(",").map(parseFloat);
+            if (coords.length !== 4 || coords.some(isNaN)) return null;
+            const [x1, y1, x2, y2] = coords;
+            return Math.abs(x2 - x1) * Math.abs(y2 - y1);
+          }).filter((size): size is number => size !== null)
+        );
+
+        if (allBoxSizes.length === 0) {
+          throw new Error("No bounding box data available");
+        }
+
+        // Define fixed number of bins 
+        const maxSize = Math.max(...allBoxSizes);
+        const binSize = maxSize / 15;
+
+        const bins: BoxData[] = Array.from({ length: 15 }, (_, i) => ({
+          range: `${Math.round(i * binSize)} - ${Math.round((i + 1) * binSize)}`,
+          count: 0,
         }));
 
-        setDistribution(formattedDist);
+        // Count occurrences in each bin
+        allBoxSizes.forEach((size) => {
+          const index = Math.min(Math.floor(size / binSize), 14);
+          bins[index].count++;
+        });
 
-        setAverageBoxSize(data.averageBoxSize);
+        // Compute average bounding box size
+        const avgBoxSize = allBoxSizes.reduce((sum, val) => sum + val, 0) / allBoxSizes.length;
+
+        setDistribution(bins);
+        setAverageBoxSize(avgBoxSize);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
         setLoading(false);
       }
-      
     };
+
     fetchData();
   }, []);
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+
   return (
     <Card>
       <CardHeader>
@@ -89,7 +106,7 @@ export default function BoundingBoxMetrics() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={distribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="range" tick={false} />
+                <XAxis dataKey="range" tickFormatter={(value: string) => value.split(" - ")[0]} />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" fill="#ffc658" />
@@ -99,6 +116,9 @@ export default function BoundingBoxMetrics() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
+
+
+
 

@@ -3,8 +3,7 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import InferenceTimeBar from "@/components/inference-time-bar";
 
-
-
+// Mocking recharts components
 jest.mock("recharts", () => ({
   BarChart: jest.fn(({ children }) => <div data-testid="bar-chart">{children}</div>),
   Bar: jest.fn(({ children }) => <div data-testid="bar">{children}</div>),
@@ -25,18 +24,17 @@ describe("InferenceTimeBar Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
+              imageMetrics: [
                 {
-                  totalTime: 200,
-                  totalInferenceTime: 120,
-                  totalPreprocessingTime: 50,
-                  totalPostprocessingTime: 30,
+                  inferenceTime: 120,
+                  preprocessingTime: 50,
+                  postprocessingTime: 30,
                 },
               ],
             },
           }),
-      })
-    ) as jest.Mock;
+      }) as jest.Mock
+    );
   });
 
   it("renders loading state initially", () => {
@@ -68,15 +66,14 @@ describe("InferenceTimeBar Component", () => {
     expect(screen.getByText("Time Performance Metrics")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Total inference time, postprocessing time, preprocessing time, and total time (ms)"
+        "Breakdown of preprocessing, inference, and postprocessing times (ms)"
       )
     ).toBeInTheDocument();
 
     // Ensure elements containing the expected text exist
-    expect(screen.getByText(/Total Time/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inference Time/i)).toBeInTheDocument();
-    expect(screen.getByText(/Preprocessing Time/i)).toBeInTheDocument();
-    expect(screen.getByText(/Postprocessing Time/i)).toBeInTheDocument();
+    expect(screen.getByText(/Total\s*Time/i)).toBeInTheDocument();
+    // Ensure the total time is displayed
+    expect(screen.getByText("200.00 ms")).toBeInTheDocument();
   });
 
   it("renders the bar chart with correct data", async () => {
@@ -97,3 +94,5 @@ describe("InferenceTimeBar Component", () => {
     expect(screen.getByTestId("tooltip")).toBeInTheDocument();
   });
 });
+
+

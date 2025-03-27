@@ -3,7 +3,7 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import InferenceTimeMetrics from "@/components/inference-time-metrics";
 
-
+// Mock recharts components
 jest.mock("recharts", () => ({
   LineChart: jest.fn(({ children }) => <div data-testid="line-chart">{children}</div>),
   Line: jest.fn(() => <div data-testid="line" />),
@@ -23,17 +23,15 @@ describe("InferenceTimeMetrics Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
-                {
-                  averageInferenceTime: 45.67,
-                  inferenceTimeDistribution: JSON.stringify({
-                    "0-50": 10,
-                    "51-100": 20,
-                    "101-150": 15,
-                    "151-200": 5,
-                    "201+": 3,
-                  }),
-                },
+              imageMetrics: [
+                { inferenceTime: 30 },
+                { inferenceTime: 45 },
+                { inferenceTime: 55 },
+                { inferenceTime: 70 },
+                { inferenceTime: 90 },
+                { inferenceTime: 120 },
+                { inferenceTime: 150 },
+                { inferenceTime: 180 },
               ],
             },
           }),
@@ -48,6 +46,7 @@ describe("InferenceTimeMetrics Component", () => {
 
   it("renders error message when fetch fails", async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error("Failed to fetch"))) as jest.Mock;
+    
     await act(async () => {
       render(<InferenceTimeMetrics />);
     });
@@ -66,11 +65,14 @@ describe("InferenceTimeMetrics Component", () => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
 
+    // Manually calculate expected average
+    const expectedAverage = (30 + 45 + 55 + 70 + 90 + 120 + 150 + 180) / 8;
+
     expect(screen.getByText("Average Inference Time")).toBeInTheDocument();
-    expect(screen.getByText("45.67 ms")).toBeInTheDocument();
+    expect(screen.getByText(`${expectedAverage.toFixed(2)} ms`)).toBeInTheDocument();
   });
 
-  it("renders the line chart with data after successful fetch", async () => {
+  it("renders the line chart with computed bins", async () => {
     await act(async () => {
       render(<InferenceTimeMetrics />);
     });
@@ -101,5 +103,6 @@ describe("InferenceTimeMetrics Component", () => {
     expect(screen.getByText("Distribution of inference times (ms)")).toBeInTheDocument();
   });
 });
+
 
 

@@ -23,16 +23,9 @@ describe("ConfidenceMetrics Component", () => {
         json: () =>
           Promise.resolve({
             data: {
-              metrics: [
+              imageMetrics: [
                 {
-                  averageConfidenceScore: 0.85,
-                  confidenceDistribution: JSON.stringify({
-                    "0.0-0.2": 10,
-                    "0.2-0.4": 15,
-                    "0.4-0.6": 20,
-                    "0.6-0.8": 30,
-                    "0.8-1.0": 25,
-                  }),
+                  confidences: [0.85, 0.9, 0.75, 0.95],
                 },
               ],
             },
@@ -67,9 +60,9 @@ describe("ConfidenceMetrics Component", () => {
     });
 
     expect(screen.getByText("Average Confidence Score")).toBeInTheDocument();
-    expect(screen.getByText("0.85")).toBeInTheDocument();
+    expect(screen.getByText("0.86")).toBeInTheDocument();
     expect(screen.getByText("High Confidence Detections (>0.8)")).toBeInTheDocument();
-    expect(screen.getByText("25.00%")).toBeInTheDocument();
+    expect(screen.getByText("75.00%")).toBeInTheDocument();
   });
 
   it("renders the bar chart with data after successful fetch", async () => {
@@ -103,3 +96,4 @@ describe("ConfidenceMetrics Component", () => {
     expect(screen.getByText("Distribution and averages of confidence scores")).toBeInTheDocument();
   });
 });
+

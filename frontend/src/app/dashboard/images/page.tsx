@@ -12,19 +12,19 @@ const DashboardPage: React.FC = () => {
   const [selectedLabels, setSelectedLabels] = useState<Option[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-
+  
   const handleSelectedLabelsChange = (labels: Option[]) => {
     console.log(labels);
     setSelectedLabels(labels);
   };
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 border-b pb-4 border-gray-200">Gallery</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col min-h-screen">
         
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-          <div className="p-6">
+        {/* Compact filter section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 flex-shrink-0">
+          <div className="p-4">
             <ImageClassificationFilter
               selectedLabels={selectedLabels}
               setSelectedLabels={handleSelectedLabelsChange}
@@ -35,13 +35,16 @@ const DashboardPage: React.FC = () => {
             />
           </div>
         </div>
-
-        <ImageGrid 
-          selectedLabels={selectedLabels} 
-          setSelectedLabels={handleSelectedLabelsChange} 
-          statusFilter={statusFilter} 
-          dateFilter={dateFilter}
-        />
+        
+        {/* Image grid with full vertical space */}
+        <div className="flex-grow overflow-visible">
+          <ImageGrid
+            selectedLabels={selectedLabels}
+            setSelectedLabels={handleSelectedLabelsChange}
+            statusFilter={statusFilter}
+            dateFilter={dateFilter}
+          />
+        </div>
       </div>
     </div>
   );

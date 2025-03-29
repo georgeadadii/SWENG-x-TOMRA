@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface ImageMetric {
   imageUrl: string;
   labels: string[];
+  confidences: number[];
 }
 
 interface ImageMetricsData {
@@ -19,6 +20,7 @@ const GET_LABELS = gql`
     imageMetrics {
       imageUrl
       labels
+      confidences
     }
   }
 `;
@@ -35,9 +37,11 @@ const ALL_LABELS = [
   "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"
 ];
 
-interface LabelCount {
+interface LabelInfo {
   name: string;
   count: number;
+  averageConfidence: number;
+  images: ImageMetric[];
 }
 
 const LabelList = () => {
@@ -46,36 +50,45 @@ const LabelList = () => {
   const { usedLabels, unusedLabels } = useMemo(() => {
     if (!data?.imageMetrics) return { usedLabels: [], unusedLabels: [] };
     
-    // Create a map to count label occurrences
-    const labelCounts = new Map<string, number>();
+    const labelInfo = new Map<string, LabelInfo>();
     
-    // Process all labels from all images
     data.imageMetrics.forEach((metric) => {
       if (Array.isArray(metric.labels)) {
-        metric.labels.forEach((label) => {
-          // Only count labels that are in our ALL_LABELS list
+        metric.labels.forEach((label, index) => {
           if (ALL_LABELS.includes(label)) {
-            labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
+            if (!labelInfo.has(label)) {
+              labelInfo.set(label, {
+                name: label,
+                count: 0,
+                averageConfidence: 0,
+                images: []
+              });
+            }
+            const info = labelInfo.get(label)!;
+            info.count++;
+            info.images.push(metric);
+            const labelConfidence = metric.confidences[index] || 0;
+            info.averageConfidence = info.images.reduce((sum, img, idx) => {
+              const labelIdx = img.labels.indexOf(label);
+              return sum + (img.confidences[labelIdx] || 0);
+            }, 0) / info.count;
           }
         });
       }
     });
     
-    // Convert to array of objects with counts
-    const usedLabelsWithCounts: LabelCount[] = Array.from(labelCounts.entries())
-      .map(([name, count]) => ({ name, count }))
-      // Sort by count (descending) - most used to least used
+    const usedLabelsList = Array.from(labelInfo.values())
       .sort((a, b) => b.count - a.count);
     
     // Get unused labels
-    const usedLabelNames = new Set(usedLabelsWithCounts.map(l => l.name));
+    const usedLabelNames = new Set(usedLabelsList.map(l => l.name));
     const unusedLabelsList = ALL_LABELS
       .filter(label => !usedLabelNames.has(label))
-      .map(name => ({ name, count: 0 }))
+      .map(name => ({ name, count: 0, averageConfidence: 0, images: [] }))
       .sort((a, b) => a.name.localeCompare(b.name));
     
     return {
-      usedLabels: usedLabelsWithCounts,
+      usedLabels: usedLabelsList,
       unusedLabels: unusedLabelsList
     };
   }, [data]);
@@ -95,9 +108,32 @@ const LabelList = () => {
           ) : (
             <ul className="space-y-0 max-h-96 overflow-y-auto">
               {usedLabels.map(label => (
-                <li key={label.name} className="text-left py-2 border-b border-gray-200 last:border-b-0">
-                  <div className="text-base font-medium">{label.name}</div>
-                  <div className="text-sm text-gray-500">Number of Images: {label.count}</div>
+                <li key={label.name} className="text-left py-4 border-b border-gray-200 last:border-b-0">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="text-base font-medium">{label.name}</div>
+                      <div className="text-sm text-gray-500">Number of Images: {label.count}</div>
+                      <div className="text-sm text-gray-500">Average Confidence: {(label.averageConfidence * 100).toFixed(1)}%</div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      {label.images.slice(0, 4).map((image, index) => (
+                        <div
+                          key={index}
+                          className="w-16 h-16 rounded-lg overflow-hidden"
+                          style={{
+                            backgroundImage: `url(${image.imageUrl})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                      ))}
+                      {label.images.length > 4 && (
+                        <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-sm text-gray-500">
+                          +{label.images.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

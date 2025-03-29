@@ -31,7 +31,7 @@ const LabelsPage: React.FC = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <p className="my-4 text-sm">
-                  You can see which labels are currently in use and how many images are associated with each label.
+                  You can see which labels are currently in use, average confidence and number of images for each label.
                   This helps you understand the distribution of labels in your dataset and identify any unused labels.
                 </p>
               </DialogContent>

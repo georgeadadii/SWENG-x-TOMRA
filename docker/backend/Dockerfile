@@ -21,6 +21,9 @@ COPY backend/requirements.txt .
 # Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
+# Copy the .env file (make sure it exists in your build context)
+COPY .env /app/.env
+
 # Copy backend source code
 COPY backend/ .
 

@@ -16,6 +16,8 @@ services:
       dockerfile: docker/backend/Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - DOCKER_CONTAINER=true
     networks:
       - app_network
 

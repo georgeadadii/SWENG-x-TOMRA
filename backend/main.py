@@ -13,13 +13,24 @@ from dotenv import load_dotenv
 from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
 
-env_path = Path("..") / ".env"  # Go up one level to the root directory
-load_dotenv(dotenv_path=env_path)
+env_path = Path("/app/.env")  # Docker container path
+if not env_path.exists():
+    env_path = Path("..") / ".env"  # Go up one level to the root directory
+
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+else:
+    print("Warning: .env file not found")
 
 # cosmosDB access
 TENANT_ID = os.getenv("AZURE_TENANT_ID")
 CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
+
+if os.getenv("DOCKER_CONTAINER") == "true":
+    NEO4J_URI = "bolt://host.docker.internal:7687"
+else:
+    NEO4J_URI = "bolt://localhost:7687"
 
 KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
 credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
@@ -121,7 +132,6 @@ class MetricsType:
     preprocess_time_distribution: str  
     postprocess_time_distribution: str  
 
-NEO4J_URI = "bolt://localhost:7687"
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "password"
 

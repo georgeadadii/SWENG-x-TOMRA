@@ -21,8 +21,6 @@ export default function AccuracyMetrics() {
   const [metrics, setMetrics] = useState([
     { name: "Accuracy", value: 0 },
     { name: "Average Precision", value: 0 },
-    { name: "Recall", value: 0 },
-    { name: "F1 Score", value: 0 },
   ]);
   const [averagePrecision, setAveragePrecision] = useState<number | null>(null); // To store average precision
   const [loading, setLoading] = useState(true);
@@ -96,8 +94,6 @@ export default function AccuracyMetrics() {
         setMetrics([
           { name: "Accuracy", value: accuracy },
           { name: "Average Precision", value: avgPrecision },
-          { name: "Recall", value: 0.88 },  // Example value for recall
-          { name: "F1 Score", value: 0.85 },  // Example value for F1 score
         ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");

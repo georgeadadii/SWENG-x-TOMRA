@@ -9,7 +9,7 @@ import uuid
 class Neo4jService(neo4j_service_pb2_grpc.Neo4jServiceServicer):
     def __init__(self):
         # Initializing Neo4j
-        self.driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+        self.driver = GraphDatabase.driver("bolt://neo4j-host.westeurope.azurecontainer.io:7687", auth=("neo4j", "password"))
 
     def StoreResult(self, request_iterator, context):
         """Handles a stream of classification results and stores them in Neo4j."""

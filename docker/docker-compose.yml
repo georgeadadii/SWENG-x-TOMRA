@@ -17,7 +17,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DOCKER_CONTAINER=true
+      - name: DOCKER_CONTAINER
+        value: "true"
     networks:
       - app_network
 

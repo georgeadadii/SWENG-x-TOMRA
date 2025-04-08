@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ImageSwiper from "@/components/ImageSwiper";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { Suspense } from 'react';
 
-const SwipingPage = () => {
-  const router = useRouter();
+// Wrap the main content that uses useSearchParams
+function SwipingContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const batchId = searchParams.get("batchId");
   const returnUrl = searchParams.get("returnUrl") || "/batches";
 
@@ -43,6 +45,15 @@ const SwipingPage = () => {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense
+const SwipingPage = () => {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <SwipingContent />
+    </Suspense>
   );
 };
 

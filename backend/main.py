@@ -27,10 +27,10 @@ TENANT_ID = os.getenv("AZURE_TENANT_ID")
 CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
 CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
 
-if os.getenv("DOCKER_CONTAINER") == "true":
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+if os.getenv("DOCKER_CONTAINER") == "true" and not os.getenv("NEO4J_URI"):
     NEO4J_URI = "bolt://host.docker.internal:7687"
-else:
-    NEO4J_URI = "bolt://localhost:7687"
+
 
 KEY_VAULT_URL = "https://sweng25group06keyvault.vault.azure.net/"
 credential = ClientSecretCredential(TENANT_ID, CLIENT_ID, CLIENT_SECRET)
@@ -46,7 +46,6 @@ secret = secret_client.get_secret("COSMOS-CONTAINER-NAME")
 CONTAINER_NAME = secret.value
 #print("COSMOS_ENDPOINT:", COSMOS_ENDPOINT)
 #print("COSMOS_KEY:", COSMOS_KEY)
-
 
 # Initialize CosmosDB Client
 if not all([COSMOS_ENDPOINT, COSMOS_KEY, DATABASE_NAME, CONTAINER_NAME]):

@@ -19,7 +19,7 @@ const LaTeXComponent = () => {
     );
 };
 
-const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
+const GRAPHQL_ENDPOINT = "https://sixsense-backend.lemonhill-ac9dfb3e.germanywestcentral.azurecontainerapps.io/graphql";
 
 type ChartData = {
     label: string;

@@ -77,7 +77,7 @@ export default function PreTimeMetrics({ selectedBatch }: PreTimeMetricsProps) {
         const numBins = 10;
         const binSize = (maxTime - minTime) / numBins;
         const bins: TimeData[] = Array.from({ length: numBins }, (_, i) => ({
-          range: `${(minTime + i * binSize).toFixed(2)} - ${(minTime + (i + 1) * binSize).toFixed(2)}`,
+          range: `${(minTime + i * binSize)} - ${(minTime + (i + 1) * binSize)}`,
           count: 0,
         }));
 

@@ -12,7 +12,11 @@ type ChartData = {
 
 type AggregatedData = Record<string, { label: string; totalConfidence: number; count: number }>;
 
-const ClassConfidence: React.FC = () => {
+interface ClassConfidenceProps {
+  selectedBatch: string | null;
+}
+
+const ClassConfidence: React.FC<ClassConfidenceProps> = ({ selectedBatch }) => {
   const [results, setResults] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +30,7 @@ const ClassConfidence: React.FC = () => {
           body: JSON.stringify({
             query: `
               query {
-                imageMetrics {
+                imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                   labels
                   confidences
                 }
@@ -80,7 +84,7 @@ const ClassConfidence: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
@@ -93,7 +97,7 @@ const ClassConfidence: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="h-[200px]">
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={results}>
                 <CartesianGrid strokeDasharray="3 3" />

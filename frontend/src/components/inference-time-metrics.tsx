@@ -9,7 +9,11 @@ type inferenceData = {
   count: number;
 };
 
-export default function inferenceTimeMetrics() {
+interface InferenceTimeMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function inferenceTimeMetrics({ selectedBatch }: InferenceTimeMetricsProps) {
   const [averageTime, setAverageTime] = useState<number | null>(null);
   const [distribution, setDistribution] = useState<inferenceData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function inferenceTimeMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 inferenceTime
               }
             }
@@ -41,7 +45,14 @@ export default function inferenceTimeMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const inferenceTimes: number[] = result.data.imageMetrics.flatMap((img: any) => img.inferenceTime);
+        // Add null check for result.data and imageMetrics
+        if (!result.data?.imageMetrics) {
+          throw new Error("No data received from the server");
+        }
+
+        const inferenceTimes: number[] = result.data.imageMetrics
+          .filter((img: any) => img && typeof img.inferenceTime === 'number')
+          .map((img: any) => img.inferenceTime);
 
         if (inferenceTimes.length === 0) {
           throw new Error("No inference time data available");
@@ -55,48 +66,59 @@ export default function inferenceTimeMetrics() {
         const minTime = Math.min(...inferenceTimes);
         const maxTime = Math.max(...inferenceTimes);
 
+        // Ensure we have valid min and max times
+        if (isNaN(minTime) || isNaN(maxTime)) {
+          throw new Error("Invalid inference time data");
+        }
+
         // Dynamically calculate bin size for exactly 10 bins
         const numBins = 10;
-        const binSize = (maxTime - minTime) / numBins; // Bin size for 10 bins
+        const binSize = (maxTime - minTime) / numBins;
 
         const bins: { [key: string]: number } = {};
         for (let i = 0; i < numBins; i++) {
           const binStart = minTime + i * binSize;
           const binEnd = binStart + binSize;
           const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
-          bins[binLabel] = 0; // Initialize count as 0 for each bin
+          bins[binLabel] = 0;
         }
 
         // Populate bins with counts
         inferenceTimes.forEach((time) => {
-          const binIndex = Math.floor((time - minTime) / binSize);
-          if (binIndex < numBins) {
-            const binStart = minTime + binIndex * binSize;
-            const binEnd = binStart + binSize;
-            const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
-            bins[binLabel] = (bins[binLabel] || 0) + 1; // Increment count for the corresponding bin
+          if (typeof time === 'number' && !isNaN(time)) {
+            const binIndex = Math.floor((time - minTime) / binSize);
+            if (binIndex >= 0 && binIndex < numBins) {
+              const binStart = minTime + binIndex * binSize;
+              const binEnd = binStart + binSize;
+              const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
+              bins[binLabel] = (bins[binLabel] || 0) + 1;
+            }
           }
         });
 
         // Convert bins to array format for Recharts
-        const formattedDist = Object.entries(bins).map(([range, count]) => ({
-          range,
-          count,
-        }));
+        const formattedDist = Object.entries(bins)
+          .filter(([_, count]) => count !== undefined && count !== null)
+          .map(([range, count]) => ({
+            range,
+            count: count || 0,
+          }));
 
         setDistribution(formattedDist);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setDistribution([]); // Reset distribution on error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+  if (distribution.length === 0) return <p>No data available</p>;
 
   return (
     <Card>
@@ -114,16 +136,12 @@ export default function inferenceTimeMetrics() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={distribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
+                <XAxis 
                   dataKey="range"
-                  tickFormatter={(value: string) => {
-                    // Format the tick to display with 2 decimals
-                    const start = parseFloat(value.split("-")[0]);
-                    return start.toFixed(2);
-                  }}
+                  tickFormatter={(value: string) => value.split("-")[0]}
                 />
                 <YAxis />
-                <Tooltip/>
+                <Tooltip />
                 <Line type="monotone" dataKey="count" stroke="#8884d8" />
               </LineChart>
             </ResponsiveContainer>

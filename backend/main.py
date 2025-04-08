@@ -79,6 +79,7 @@ class ImageMetricsType:
     _etag: str
     _attachments: str
     _ts: int
+    batch_id: str | None = strawberry.field(name="batchId")
 
 # Define a GraphQL type that matches Neo4j data with additional image_url field
 @strawberry.type
@@ -178,13 +179,18 @@ def get_results(batch_id: str = None) -> List[ResultType]:
         ]
         
 # Fetch data from cosmosDB
-def get_image_metrics() -> List[Dict[str, Any]]:
+def get_image_metrics(batch_id: str = None) -> List[Dict[str, Any]]:
     """
     Fetches data from CosmosDB.
     """
     query = "SELECT * FROM c"
-    # Modify this query as needed
-    items = list(container.query_items(query=query, enable_cross_partition_query=True))
+    if batch_id:
+        query = "SELECT * FROM c WHERE c.batch_id = @batch_id"
+        parameters = [{"name": "@batch_id", "value": batch_id}]
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
+    else:
+        items = list(container.query_items(query=query, enable_cross_partition_query=True))
+    
     return [
         ImageMetricsType(
             id=item["id"],
@@ -202,6 +208,7 @@ def get_image_metrics() -> List[Dict[str, Any]]:
             _etag=item["_etag"],
             _attachments=item["_attachments"],
             _ts=item["_ts"],
+            batch_id=item.get("batch_id"),
         )
         for item in items
     ]
@@ -301,8 +308,8 @@ class Query:
         return get_metrics()    
     
     @strawberry.field
-    def image_metrics(self) -> List[ImageMetricsType]:
-        return get_image_metrics()
+    def image_metrics(self, batch_id: str = None) -> List[ImageMetricsType]:
+        return get_image_metrics(batch_id=batch_id)
     
 @strawberry.type
 class Mutation:

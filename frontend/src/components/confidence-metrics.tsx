@@ -10,7 +10,11 @@ type ConfidenceData = {
   count: number;
 };
 
-export default function ConfidenceMetrics() {
+interface ConfidenceMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function ConfidenceMetrics({ selectedBatch }: ConfidenceMetricsProps) {
   const [averageConfidence, setAverageConfidence] = useState<number | null>(null);
   const [confidenceDistribution, setConfidenceDistribution] = useState<ConfidenceData[]>([]);
   const [highConfidencePercentage, setHighConfidencePercentage] = useState<number | null>(null);
@@ -26,7 +30,7 @@ export default function ConfidenceMetrics() {
           body: JSON.stringify({
             query: `
               query {
-                imageMetrics {
+                imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                   confidences
                 }
               }
@@ -83,7 +87,7 @@ export default function ConfidenceMetrics() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;

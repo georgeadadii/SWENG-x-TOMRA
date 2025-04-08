@@ -9,7 +9,11 @@ type BoxData = {
   count: number;
 };
 
-export default function BoundingBoxMetrics() {
+interface BoundingBoxMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function BoundingBoxMetrics({ selectedBatch }: BoundingBoxMetricsProps) {
   const [averageBoxSize, setAverageBoxSize] = useState<number | null>(null);
   const [distribution, setDistribution] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function BoundingBoxMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 bboxCoordinates
               }
             }
@@ -41,17 +45,27 @@ export default function BoundingBoxMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const rawData = result.data?.imageMetrics || [];
+        // Add null check for result.data and imageMetrics
+        if (!result.data?.imageMetrics) {
+          throw new Error("No data received from the server");
+        }
 
-        // Extract bounding box areas
-        const allBoxSizes: number[] = rawData.flatMap((item: { bboxCoordinates: string[] }) =>
-          item.bboxCoordinates.map((coordStr) => {
-            const coords = coordStr.split(",").map(parseFloat);
-            if (coords.length !== 4 || coords.some(isNaN)) return null;
-            const [x1, y1, x2, y2] = coords;
-            return Math.abs(x2 - x1) * Math.abs(y2 - y1);
-          }).filter((size): size is number => size !== null)
-        );
+        const rawData = result.data.imageMetrics;
+
+        // Extract bounding box areas with proper type checking
+        const allBoxSizes: number[] = rawData
+          .filter((item: any) => item && Array.isArray(item.bboxCoordinates))
+          .flatMap((item: any) => 
+            item.bboxCoordinates
+              .filter((coordStr: any) => typeof coordStr === 'string')
+              .map((coordStr: string) => {
+                const coords = coordStr.split(",").map(parseFloat);
+                if (coords.length !== 4 || coords.some(isNaN)) return null;
+                const [x1, y1, x2, y2] = coords;
+                return Math.abs(x2 - x1) * Math.abs(y2 - y1);
+              })
+              .filter((size: number | null): size is number => size !== null && !isNaN(size))
+          );
 
         if (allBoxSizes.length === 0) {
           throw new Error("No bounding box data available");
@@ -59,17 +73,28 @@ export default function BoundingBoxMetrics() {
 
         // Define fixed number of bins 
         const maxSize = Math.max(...allBoxSizes);
-        const binSize = maxSize / 15;
+        const minSize = Math.min(...allBoxSizes);
+
+        // Ensure we have valid min and max sizes
+        if (isNaN(minSize) || isNaN(maxSize)) {
+          throw new Error("Invalid bounding box size data");
+        }
+
+        const binSize = (maxSize - minSize) / 15;
 
         const bins: BoxData[] = Array.from({ length: 15 }, (_, i) => ({
-          range: `${Math.round(i * binSize)} - ${Math.round((i + 1) * binSize)}`,
+          range: `${Math.round(minSize + i * binSize)} - ${Math.round(minSize + (i + 1) * binSize)}`,
           count: 0,
         }));
 
-        // Count occurrences in each bin
-        allBoxSizes.forEach((size) => {
-          const index = Math.min(Math.floor(size / binSize), 14);
-          bins[index].count++;
+        // Count occurrences in each bin with proper bounds checking
+        allBoxSizes.forEach((size: number) => {
+          if (typeof size === 'number' && !isNaN(size)) {
+            const index = Math.min(Math.floor((size - minSize) / binSize), 14);
+            if (index >= 0) {
+              bins[index].count++;
+            }
+          }
         });
 
         // Compute average bounding box size
@@ -79,16 +104,18 @@ export default function BoundingBoxMetrics() {
         setAverageBoxSize(avgBoxSize);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setDistribution([]); // Reset distribution on error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+  if (distribution.length === 0) return <p>No data available</p>;
 
   return (
     <Card>

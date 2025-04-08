@@ -22,6 +22,10 @@ interface OverviewCardProps {
   children: React.ReactNode;
 }
 
+interface ImageClassificationMetricsProps {
+  selectedBatch: string | null;
+}
+
 function OverviewCard({ title, children }: OverviewCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -38,7 +42,7 @@ function OverviewCard({ title, children }: OverviewCardProps) {
   );
 }
 
-export default function ImageClassificationMetrics() {
+export default function ImageClassificationMetrics({ selectedBatch }: ImageClassificationMetricsProps) {
   return (
     <Tabs defaultValue="internal" className="space-y-4 p-5">
       <TabsList>
@@ -57,39 +61,33 @@ export default function ImageClassificationMetrics() {
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Overview />
+              <Overview selectedBatch={selectedBatch} />
             </div>
           </TabsContent>
 
           <TabsContent value="confidence" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <ConfidenceMetrics />
-              <ClassDistribution />
-              <ClassConfidence />
+              <ConfidenceMetrics selectedBatch={selectedBatch} />
+              <ClassDistribution selectedBatch={selectedBatch} />
+              <ClassConfidence selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
 
           <TabsContent value="bounding" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <BoundingBoxMetrics />
-              <BoxProportionMetrics />
-              <DetectionMetrics />
+              <BoundingBoxMetrics selectedBatch={selectedBatch} />
+              <BoxProportionMetrics selectedBatch={selectedBatch} />
+              <DetectionMetrics selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
 
           <TabsContent value="time" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-              <InferenceTimeMetrics />
-              <PreTimeMetrics />
-              <PostTimeMetrics />
-              <InferenceTimeBar />
+              <InferenceTimeMetrics selectedBatch={selectedBatch} />
+              <PreTimeMetrics selectedBatch={selectedBatch} />
+              <PostTimeMetrics selectedBatch={selectedBatch} />
+              <InferenceTimeBar selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
         </Tabs>
       </TabsContent>

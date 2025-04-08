@@ -11,7 +11,11 @@ type ChartData = {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-export default function ClassDistribution() {
+interface ClassDistributionProps {
+  selectedBatch: string | null;
+}
+
+export default function ClassDistribution({ selectedBatch }: ClassDistributionProps) {
   const [results, setResult] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +29,7 @@ export default function ClassDistribution() {
           body: JSON.stringify({
             query: `
               query {
-                imageMetrics {
+                imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                   topLabel
                 }
               }
@@ -76,7 +80,7 @@ export default function ClassDistribution() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;

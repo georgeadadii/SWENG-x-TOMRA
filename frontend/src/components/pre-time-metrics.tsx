@@ -4,14 +4,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
-type preprocessingData = {
+type TimeData = {
   range: string;
   count: number;
 };
 
-export default function preprocessingTimeMetrics() {
+interface PreTimeMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function PreTimeMetrics({ selectedBatch }: PreTimeMetricsProps) {
   const [averageTime, setAverageTime] = useState<number | null>(null);
-  const [distribution, setDistribution] = useState<preprocessingData[]>([]);
+  const [distribution, setDistribution] = useState<TimeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +28,7 @@ export default function preprocessingTimeMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 preprocessingTime
               }
             }
@@ -41,62 +45,65 @@ export default function preprocessingTimeMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const preprocessingTimes: number[] = result.data.imageMetrics.flatMap((img: any) => img.preprocessingTime);
+        // Add null check for result.data and imageMetrics
+        if (!result.data?.imageMetrics) {
+          throw new Error("No data received from the server");
+        }
 
-        if (preprocessingTimes.length === 0) {
+        const rawData = result.data.imageMetrics;
+
+        // Extract preprocessing times with proper type checking
+        const allTimes: number[] = rawData
+          .filter((item: any) => item && typeof item.preprocessingTime === 'number' && !isNaN(item.preprocessingTime))
+          .map((item: any) => item.preprocessingTime);
+
+        if (allTimes.length === 0) {
           throw new Error("No preprocessing time data available");
         }
 
-        // Calculate average preprocessing time
-        const total = preprocessingTimes.reduce((sum, time) => sum + time, 0);
-        setAverageTime(total / preprocessingTimes.length);
+        // Calculate average time
+        const total = allTimes.reduce((sum, val) => sum + val, 0);
+        setAverageTime(total / allTimes.length);
 
-        // Dynamically calculate the number of bins
-        const minTime = Math.min(...preprocessingTimes);
-        const maxTime = Math.max(...preprocessingTimes);
+        // Create bins for distribution
+        const minTime = Math.min(...allTimes);
+        const maxTime = Math.max(...allTimes);
 
-        // Dynamically calculate bin size for exactly 10 bins
-        const numBins = 10;
-        const binSize = (maxTime - minTime) / numBins; // Bin size for 10 bins
-
-        const bins: { [key: string]: number } = {};
-        for (let i = 0; i < numBins; i++) {
-          const binStart = minTime + i * binSize;
-          const binEnd = binStart + binSize;
-          const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
-          bins[binLabel] = 0; // Initialize count as 0 for each bin
+        // Ensure we have valid min and max times
+        if (isNaN(minTime) || isNaN(maxTime)) {
+          throw new Error("Invalid preprocessing time data");
         }
 
-        // Populate bins with counts
-        preprocessingTimes.forEach((time) => {
-          const binIndex = Math.floor((time - minTime) / binSize);
-          if (binIndex < numBins) {
-            const binStart = minTime + binIndex * binSize;
-            const binEnd = binStart + binSize;
-            const binLabel = `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`;
-            bins[binLabel] = (bins[binLabel] || 0) + 1; // Increment count for the corresponding bin
+        const numBins = 10;
+        const binSize = (maxTime - minTime) / numBins;
+        const bins: TimeData[] = Array.from({ length: numBins }, (_, i) => ({
+          range: `${(minTime + i * binSize).toFixed(2)} - ${(minTime + (i + 1) * binSize).toFixed(2)}`,
+          count: 0,
+        }));
+
+        // Count occurrences in each bin
+        allTimes.forEach((time: number) => {
+          const index = Math.min(Math.floor((time - minTime) / binSize), numBins - 1);
+          if (index >= 0) {
+            bins[index].count++;
           }
         });
 
-        // Convert bins to array format for Recharts
-        const formattedDist = Object.entries(bins).map(([range, count]) => ({
-          range,
-          count,
-        }));
-
-        setDistribution(formattedDist);
+        setDistribution(bins);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setDistribution([]); // Reset distribution on error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+  if (distribution.length === 0) return <p>No data available</p>;
 
   return (
     <Card>

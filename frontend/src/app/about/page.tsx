@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Zap, BarChart2, MessageSquare, Cloud, Shield } from "lucide-react";
+import Image from "next/image";
 
 const roboto = Roboto({ subsets: ["latin"], weight: ["400", "700"] });
 
@@ -40,21 +41,21 @@ export default function About() {
   ];
 
   const teamLeads = [
-    { name: "Radi (Leila) Adil", role: "Team Lead", year: "3rd Year" },
-    { name: "Cindy Ariyo", role: "Team Lead", year: "3rd Year" },
-    { name: "Victor Dalessandris", role: "Team Lead", year: "3rd Year" },
-    { name: "Ayomide Ifedolapo Oyelakun", role: "Team Lead", year: "3rd Year" },
+    { name: "Radi (Leila) Adil", role: "Team Lead", year: "3rd Year", image: "/Radi (Leila) Adil.png" },
+    { name: "Cindy Ariyo", role: "Team Lead", year: "3rd Year", image: "/Cindy Ariyo.png" },
+    { name: "Victor Dalessandris", role: "Team Lead", year: "3rd Year", image: "/Victor Dalessandris.jpg" },
+    { name: "Ayomide Ifedolapo Oyelakun", role: "Team Lead", year: "3rd Year", image: "/Ayomide Ifedolapo Oyelakun.jpg" },
   ];
 
   const frontendTeam = [
-    { name: "Patrick Phibbs", role: "Frontend Developer", year: "2nd Year" },
-    { name: "Hong Shen", role: "Frontend Developer", year: "2nd Year" },
+    { name: "Patrick Phibbs", role: "Frontend Developer", year: "2nd Year", image: "/Patrick Phibbs.jpg" },
+    { name: "Hong Shen", role: "Frontend Developer", year: "2nd Year", image: "/HS.jpg" },
   ];
 
   const backendTeam = [
-    { name: "George Diarmuid Levins", role: "Backend Developer", year: "2nd Year" },
-    { name: "Ionut George Adadi", role: "Backend Developer", year: "2nd Year" },
-    { name: "Junyi Xia", role: "Backend Developer", year: "2nd Year" },
+    { name: "George Diarmuid Levins", role: "Backend Developer", year: "2nd Year", image: "/George Diarmuid Levins.jpg" },
+    { name: "Ionut George Adadi", role: "Backend Developer", year: "2nd Year", image: "/Ionut George Adadi.jpg" },
+    { name: "Junyi Xia", role: "Backend Developer", year: "2nd Year", image: "/Junyi Xia.jpg" },
   ];
 
   return (
@@ -88,7 +89,7 @@ export default function About() {
             transition={{ duration: 1, delay: 0.8 }}
           >
             <p className="text-lg md:text-xl text-white opacity-90 leading-relaxed">
-              We are the developers of SixSense, a near real-time image classification engine designed to provide real-time image classification capabilities in a hybrid edge and cloud infrastructure.
+              We are a team of passionate developers and AI enthusiasts dedicated to making image classification accessible and efficient for everyone.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
@@ -100,7 +101,7 @@ export default function About() {
               >
                 <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
                 <p className="text-white/80">
-                  Developed in collaboration with TOMRA Sorting Ltd, this project focuses on leveraging pre-trained models to classify images and improve model accuracy through user feedback.
+                  To revolutionize image classification by providing intuitive tools that make AI-powered image recognition accessible to developers, researchers, and businesses of all sizes.
                 </p>
               </motion.div>
 
@@ -112,19 +113,19 @@ export default function About() {
               >
                 <h2 className="text-2xl font-bold text-white mb-4">Our Vision</h2>
                 <p className="text-white/80">
-                  The system is designed to be deployed across both edge and cloud environments, ensuring scalability and flexibility.
+                  To become the leading platform for image classification, setting new standards for accuracy, efficiency, and user experience in the field of computer vision.
                 </p>
               </motion.div>
             </div>
 
-            {/* Advantages Section */}
+            {/* Key Features Section */}
             <motion.div
               className="mt-16"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.4 }}
             >
-              <h2 className="text-3xl font-bold text-white mb-12 mt-20 text-center">Advantages of Our System</h2>
+              <h2 className="text-3xl font-bold text-white mb-8 text-center">Key Features</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {features.map((feature, index) => (
                   <motion.div
@@ -149,12 +150,12 @@ export default function About() {
 
             {/* Meet the Team Section */}
             <motion.div
-              className="mt-44"
+              className="mt-24"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.8 }}
             >
-              <h2 className="text-4xl font-bold text-white mt-20 mb-12 text-center">Meet the Team</h2>
+              <h2 className="text-4xl font-bold text-white mb-12 text-center">Meet the Team</h2>
 
               {/* Team Leads */}
               <motion.div
@@ -174,8 +175,18 @@ export default function About() {
                       transition={{ duration: 0.5, delay: 2.2 + (index * 0.1) }}
                       whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(139, 92, 246, 0.3)" }}
                     >
-                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center">
-                        <span className="text-white/50 text-sm">Photo</span>
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center overflow-hidden">
+                        {member.image ? (
+                          <Image 
+                            src={member.image} 
+                            alt={member.name} 
+                            width={128} 
+                            height={128} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-white/50 text-sm">Photo</span>
+                        )}
                       </div>
                       <h4 className="text-xl font-bold text-white text-center">{member.name}</h4>
                       <p className="text-purple-300 text-center">{member.role}</p>
@@ -203,8 +214,18 @@ export default function About() {
                       transition={{ duration: 0.5, delay: 2.6 + (index * 0.1) }}
                       whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(139, 92, 246, 0.3)" }}
                     >
-                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center">
-                        <span className="text-white/50 text-sm">Photo</span>
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center overflow-hidden">
+                        {member.image ? (
+                          <Image 
+                            src={member.image} 
+                            alt={member.name} 
+                            width={128} 
+                            height={128} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-white/50 text-sm">Photo</span>
+                        )}
                       </div>
                       <h4 className="text-xl font-bold text-white text-center">{member.name}</h4>
                       <p className="text-purple-300 text-center">{member.role}</p>
@@ -232,8 +253,18 @@ export default function About() {
                       transition={{ duration: 0.5, delay: 3.0 + (index * 0.1) }}
                       whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(139, 92, 246, 0.3)" }}
                     >
-                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center">
-                        <span className="text-white/50 text-sm">Photo</span>
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center overflow-hidden">
+                        {member.image ? (
+                          <Image 
+                            src={member.image} 
+                            alt={member.name} 
+                            width={128} 
+                            height={128} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-white/50 text-sm">Photo</span>
+                        )}
                       </div>
                       <h4 className="text-xl font-bold text-white text-center">{member.name}</h4>
                       <p className="text-purple-300 text-center">{member.role}</p>

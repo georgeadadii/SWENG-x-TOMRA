@@ -49,6 +49,45 @@ Run `python model_service.py`
 
   Some images for the model_service are already provided in \unprocessed_images\
 
+## Processing Kaggle Datasets:
+
+To process images from Kaggle datasets:
+
+1. Download the kaggle.json from the secrets protected branch on gitlab
+
+2. Place the kaggle.json file in: <br>
+`~/.kaggle/kaggle.json (Linux/Mac)`<br>
+`C:\Users\<username>\.kaggle\kaggle.json (Windows)`
+
+
+
+3. Then run:
+
+
+  ```bash
+  # Process all images from default animals10 dataset
+  python model_client.py --kaggle
+  ```
+
+  ```bash
+  # Process specific number of images
+  python model_client.py --kaggle --max-images 100
+  ```
+
+  ## Options:
+
+  --kaggle: Process images from Kaggle dataset instead of local folder
+
+  --max-images: Limit number of images processed (e.g., --max-images 50)
+
+### Notes:
+- The first run downloads the dataset to a "kaggle_images" folder. 
+
+- The "alessiocorrado99/animals10" dataset is used by default
+
+- Processed images are automatically cleaned up
+
+
 ## Additional Models
 
 This system allows users to choose between different machine learning models for image processing. Currently, two models are supported:

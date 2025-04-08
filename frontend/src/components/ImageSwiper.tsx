@@ -18,7 +18,7 @@ interface ImageData {
   misclassified: boolean;
   reviewed?: boolean;
   batchId?: string;
-  createdAt?: string; 
+  createdAt?: string;
 }
 
 const GET_IMAGES = gql`
@@ -75,11 +75,11 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
         handleSwipe("right");
       }
     };
-  
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [images]);
-  
+
   // Process images when data changes or batch selection changes
   useEffect(() => {
     if (data?.results) {
@@ -99,7 +99,7 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
         const dateB = new Date(b[1][0]?.createdAt || 0).getTime();
         return dateB - dateA; // newest first
       });
-    
+
       const batchOptions = [
         { value: "all", label: "All batches" },
         ...sortedBatches.map(([batchId], index) => ({
@@ -109,12 +109,12 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
       ];
 
       setAvailableBatches(batchOptions);
-     
+
       // Filter images - if batchId is provided, use that, otherwise use selected batch
       const activeBatchId = batchId || selectedBatch;
-      
+
       let filteredImages;
-      
+
       // When accessed through a batch (batchId is provided), show all images regardless of review status
       // When accessed from main interface, only show unreviewed images
       if (batchId) {
@@ -124,26 +124,29 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
         // From main interface - only show unreviewed images
         filteredImages = data.results.filter(img => img.reviewed !== true);
       }
-      
+
       if (activeBatchId !== "all") {
         filteredImages = filteredImages.filter((img) => img.batchId === activeBatchId);
-        // Set the total count of images in this batch
-        const totalInBatch = data.results.filter(img => img.batchId === activeBatchId).length;
-        const reviewedInBatch = data.results.filter((img) => 
-          img.batchId === activeBatchId && img.reviewed === true
-        ).length;
-        
-        setTotalImagesInBatch(totalInBatch);
-        setReviewedCount(reviewedInBatch);
       }
       
+      const totalInBatch = activeBatchId === "all"
+        ? data.results.length
+        : data.results.filter(img => img.batchId === activeBatchId).length;
+      
+      const reviewedInBatch = activeBatchId === "all"
+        ? data.results.filter(img => img.reviewed === true).length
+        : data.results.filter(img => img.batchId === activeBatchId && img.reviewed === true).length;
+      
+      setTotalImagesInBatch(totalInBatch);
+      setReviewedCount(reviewedInBatch);
+
       setImages(filteredImages);
     }
   }, [data, selectedBatch, batchId]);
 
   const handleSwipe = async (swipeDirection: "left" | "right") => {
     if (images.length === 0) return;
-    
+
     const currentImage = images[0];
     const classified = swipeDirection === "right";
     const misclassified = swipeDirection === "left";
@@ -152,14 +155,14 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
     try {
       // Always submit the new classification regardless of previous review status
       await storeFeedback({
-        variables: { 
-          imageUrl: currentImage.imageUrl, 
-          classified, 
-          misclassified, 
-          reviewed: true 
+        variables: {
+          imageUrl: currentImage.imageUrl,
+          classified,
+          misclassified,
+          reviewed: true
         },
       });
-      
+
       // Only increment reviewed count if this was not already reviewed
       if (!wasAlreadyReviewed) {
         setReviewedCount(prev => prev + 1);
@@ -184,8 +187,8 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
   };
 
   // Calculate progress percentage
-  const progressPercentage = totalImagesInBatch > 0 
-    ? Math.round((reviewedCount / totalImagesInBatch) * 100) 
+  const progressPercentage = totalImagesInBatch > 0
+    ? Math.round((reviewedCount / totalImagesInBatch) * 100)
     : 0;
 
   return (
@@ -193,8 +196,8 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
       <div className="mb-6 flex justify-between items-center w-full px-6 pt-4">
         {/* Back button - only show if a specific batch is being reviewed */}
         {batchId && onReviewComplete && (
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onReviewComplete}
             className="mr-auto flex items-center gap-1 h-8 px-3 text-sm"
           >
@@ -202,23 +205,23 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
             Back to Batch
           </Button>
         )}
-        
+
         {/* Only show batch selector if no batchId is provided */}
         {!batchId && (
           <Dropdown
             trigger={
               <Box variant="outline" className="w-[200px] justify-between">
                 <span className="text-sm truncate">
-                  {selectedBatch !== "all" 
-                    ? `Filtering: ${selectedBatch}` 
+                  {selectedBatch !== "all"
+                    ? `Filtering: ${selectedBatch}`
                     : "Filter by Batch"}
                 </span>
               </Box>
             }
           >
             {availableBatches.map((filter) => (
-              <DropdownItem 
-                key={filter.value} 
+              <DropdownItem
+                key={filter.value}
                 onClick={() => setSelectedBatch(filter.value)}
               >
                 {filter.label}
@@ -228,36 +231,36 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
         )}
 
         {/* Only show help dialog in batch mode */}
-        {batchId && (
-          <Dialog>
-            <DialogTrigger>
-              <Box variant="outline" size="icon">
-                <CircleHelp className="h-4 w-4" />
-              </Box>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Image Batch Review</DialogTitle>
-                <DialogDescription>
-                  <p className="mb-2">Quickly review images by swiping:</p>
-                  <ul className="list-disc pl-5 mb-2 space-y-1">
-                    <li>Swipe LEFT for incorrectly classified images</li>
-                    <li>Swipe RIGHT for correctly classified images</li>
-                  </ul>
-                  <p>You can also use keyboard shortcuts: Left arrow (←) for incorrect and Right arrow (→) for correct.</p>
-                </DialogDescription>
-              </DialogHeader>
-            </DialogContent>
-          </Dialog>
-        )}
+
+        <Dialog>
+          <DialogTrigger>
+            <Box variant="outline" size="icon">
+              <CircleHelp className="h-4 w-4" />
+            </Box>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Image Batch Review</DialogTitle>
+              <DialogDescription>
+                <p className="mb-2">Quickly review images by swiping:</p>
+                <ul className="list-disc pl-5 mb-2 space-y-1">
+                  <li>Swipe LEFT for incorrectly classified images</li>
+                  <li>Swipe RIGHT for correctly classified images</li>
+                </ul>
+                <p>You can also use keyboard shortcuts: Left arrow (←) for incorrect and Right arrow (→) for correct.</p>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+
       </div>
 
       {/* Progress bar */}
-      {batchId && totalImagesInBatch > 0 && (
+      {totalImagesInBatch > 0 && (
         <div className="px-6 mb-4">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 
+            <div
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -308,8 +311,8 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
               <div className="text-center">
                 <p className="text-gray-500 text-lg mb-2">🎉 All images reviewed!</p>
                 {batchId && onReviewComplete && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={onReviewComplete}
                     className="mt-4"
                   >
@@ -328,19 +331,18 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
                     exit={{ x: direction === "right" ? 1000 : -1000, opacity: 0 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
                   >
-                    <img 
-                      src={image.imageUrl || "/placeholder.svg"} 
-                      alt={image.classLabel} 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={image.imageUrl || "/placeholder.svg"}
+                      alt={image.classLabel}
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
                       <div className="flex justify-between items-center mb-1">
                         <p className="text-white text-lg font-bold">{image.classLabel}</p>
                         {/* Only show previously classified badge in batch mode */}
                         {batchId && image.reviewed && (
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${
-                            image.classified ? "bg-green-500/20 text-green-50" : "bg-red-500/20 text-red-50"
-                          }`}>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${image.classified ? "bg-green-500/20 text-green-50" : "bg-red-500/20 text-red-50"
+                            }`}>
                             Previously {image.classified ? "Correct" : "Incorrect"}
                           </span>
                         )}
@@ -368,25 +370,25 @@ export default function ImageSwiper({ batchId, onReviewComplete }: ImageSwiperPr
             <ChevronRight className="h-6 w-6" />
           </Button>
         </div>
-        
+
         <div className="flex justify-center mt-6">
           {/* Only show swipe guide in batch mode */}
-          {batchId && (
-            <div className="flex space-x-6 justify-center items-center">
-              <div className="flex flex-col items-center">
-                <div className="bg-red-100 text-red-800 p-2 rounded-full mb-2">
-                  <ChevronLeft className="h-5 w-5" />
-                </div>
-                <span className="text-sm text-gray-500">Incorrect</span>
+
+          <div className="flex space-x-6 justify-center items-center">
+            <div className="flex flex-col items-center">
+              <div className="bg-red-100 text-red-800 p-2 rounded-full mb-2">
+                <ChevronLeft className="h-5 w-5" />
               </div>
-              <div className="flex flex-col items-center">
-                <div className="bg-green-100 text-green-800 p-2 rounded-full mb-2">
-                  <ChevronRight className="h-5 w-5" />
-                </div>
-                <span className="text-sm text-gray-500">Correct</span>
-              </div>
+              <span className="text-sm text-gray-500">Incorrect</span>
             </div>
-          )}
+            <div className="flex flex-col items-center">
+              <div className="bg-green-100 text-green-800 p-2 rounded-full mb-2">
+                <ChevronRight className="h-5 w-5" />
+              </div>
+              <span className="text-sm text-gray-500">Correct</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

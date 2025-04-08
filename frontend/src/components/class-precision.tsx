@@ -34,21 +34,29 @@ const calculateAveragePrecision = (data: ChartData[]): number => {
     return data.length > 0 ? totalPrecision / data.length : 0;
 };
 
-const ClassPrecision: React.FC = () => {
+interface ClassPrecisionProps {
+    selectedBatch: string | null;
+}
+
+const ClassPrecision: React.FC<ClassPrecisionProps> = ({ selectedBatch }) => {
     const [results, setResults] = useState<ChartData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [averagePrecision, setAveragePrecision] = useState<number | null>(null);
+    const [hasData, setHasData] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setLoading(true);
+                setError(null);
+                
                 const response = await fetch(GRAPHQL_ENDPOINT, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         query: `query {
-                            results {
+                            results${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                                 classLabel
                                 classified
                                 reviewed
@@ -66,7 +74,16 @@ const ClassPrecision: React.FC = () => {
                     throw new Error(result.errors[0]?.message || "GraphQL query error");
                 }
 
-                const rawData = result.data?.results || [];
+                // Check if we have valid data
+                if (!result.data?.results || result.data.results.length === 0) {
+                    setHasData(false);
+                    setResults([]);
+                    setAveragePrecision(0);
+                    return;
+                }
+
+                const rawData = result.data.results;
+                setHasData(true);
 
                 // Aggregate counts per label
                 const aggregatedData: AggregatedData = rawData.reduce((acc: AggregatedData, item: { classLabel: string; classified: boolean; reviewed: boolean }) => {
@@ -89,16 +106,18 @@ const ClassPrecision: React.FC = () => {
                 setAveragePrecision(calculateAveragePrecision(computedData));
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to fetch data");
+                setHasData(false);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, []);
+    }, [selectedBatch]);
 
     if (loading) return <p>Loading...</p>;
     if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+    if (!hasData) return <p>No data available for {selectedBatch ? `batch ${selectedBatch}` : 'the selected criteria'}</p>;
 
     return (
         <Card className="col-span-3">

@@ -5,9 +5,10 @@ const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 interface BatchSelectorProps {
   onBatchChange: (batchId: string | null) => void;
+  activeTab: 'internal' | 'feedback';
 }
 
-export default function BatchSelector({ onBatchChange }: BatchSelectorProps) {
+export default function BatchSelector({ onBatchChange, activeTab }: BatchSelectorProps) {
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,43 +16,93 @@ export default function BatchSelector({ onBatchChange }: BatchSelectorProps) {
   useEffect(() => {
     const fetchBatches = async () => {
       try {
-        const response = await fetch(GRAPHQL_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: `
-              query {
-                imageMetrics {
-                  batchId
+        setLoading(true);
+        setError(null);
+
+        // Only fetch the relevant data based on active tab
+        if (activeTab === 'internal') {
+          // Fetch batch IDs from imageMetrics
+          const imageMetricsResponse = await fetch(GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: `
+                query {
+                  imageMetrics {
+                    batchId
+                  }
                 }
-              }
-            `,
-          }),
-        });
+              `,
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.errors) {
-          throw new Error(result.errors[0]?.message || "GraphQL query error");
-        }
-
-        // Get unique batch IDs
-        const uniqueBatches = new Set<string>();
-        result.data.imageMetrics.forEach((item: { batchId: string | null }) => {
-          if (item.batchId) {
-            uniqueBatches.add(item.batchId);
+          if (!imageMetricsResponse.ok) {
+            throw new Error(`HTTP error! Status: ${imageMetricsResponse.status}`);
           }
-        });
 
-        // Convert to array and sort by batch ID
-        const batchArray = Array.from(uniqueBatches)
-          .map(id => ({ id, name: `Batch ${id.slice(0, 8)}` }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+          const imageMetricsResult = await imageMetricsResponse.json();
+          if (imageMetricsResult.errors) {
+            throw new Error(imageMetricsResult.errors[0]?.message || "GraphQL query error");
+          }
 
-        setBatches(batchArray);
+          // Get unique batch IDs from imageMetrics
+          const uniqueBatches = new Set<string>();
+          if (imageMetricsResult.data?.imageMetrics) {
+            imageMetricsResult.data.imageMetrics.forEach((item: { batchId: string | null }) => {
+              if (item.batchId) {
+                uniqueBatches.add(item.batchId);
+              }
+            });
+          }
+
+          // Convert to array and sort by batch ID
+          const batchArray = Array.from(uniqueBatches)
+            .map(id => ({ id, name: `Batch ${id.slice(0, 8)}` }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+          setBatches(batchArray);
+        } else {
+          // Fetch batch IDs from results
+          const resultsResponse = await fetch(GRAPHQL_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: `
+                query {
+                  results {
+                    batchId
+                  }
+                }
+              `,
+            }),
+          });
+
+          if (!resultsResponse.ok) {
+            throw new Error(`HTTP error! Status: ${resultsResponse.status}`);
+          }
+
+          const resultsResult = await resultsResponse.json();
+          if (resultsResult.errors) {
+            throw new Error(resultsResult.errors[0]?.message || "GraphQL query error");
+          }
+
+          // Get unique batch IDs from results
+          const uniqueBatches = new Set<string>();
+          if (resultsResult.data?.results) {
+            resultsResult.data.results.forEach((item: { batchId: string | null }) => {
+              if (item.batchId) {
+                uniqueBatches.add(item.batchId);
+              }
+            });
+          }
+
+          // Convert to array and sort by batch ID
+          const batchArray = Array.from(uniqueBatches)
+            .map(id => ({ id, name: `Batch ${id.slice(0, 8)}` }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+          setBatches(batchArray);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch batches");
       } finally {
@@ -60,7 +111,7 @@ export default function BatchSelector({ onBatchChange }: BatchSelectorProps) {
     };
 
     fetchBatches();
-  }, []);
+  }, [activeTab]);
 
   if (loading) return <p>Loading batches...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;

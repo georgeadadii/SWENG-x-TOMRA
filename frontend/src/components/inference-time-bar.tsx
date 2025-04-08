@@ -6,7 +6,11 @@ const GRAPHQL_ENDPOINT = "http://localhost:8000/graphql";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#878f99"];
 
-export default function InferenceTimeBar() {
+interface InferenceTimeBarProps {
+  selectedBatch: string | null;
+}
+
+export default function InferenceTimeBar({ selectedBatch }: InferenceTimeBarProps) {
   const [timeData, setTimeData] = useState([
     { name: "Inference Time", value: 0 },
     { name: "Preprocessing Time", value: 0 },
@@ -26,7 +30,7 @@ export default function InferenceTimeBar() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 inferenceTime
                 preprocessingTime
                 postprocessingTime
@@ -71,7 +75,7 @@ export default function InferenceTimeBar() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;

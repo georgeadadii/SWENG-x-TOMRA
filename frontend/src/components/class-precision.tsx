@@ -19,7 +19,7 @@ const LaTeXComponent = () => {
     );
 };
 
-const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT || "http://localhost:8000/graphql";
+const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:8000/graphql";
 
 type ChartData = {
     label: string;

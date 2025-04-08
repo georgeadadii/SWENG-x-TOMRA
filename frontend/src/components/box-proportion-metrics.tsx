@@ -9,7 +9,11 @@ type BoxData = {
   count: number;
 };
 
-export default function BoxProportionMetrics() {
+interface BoxProportionMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function BoxProportionMetrics({ selectedBatch }: BoxProportionMetricsProps) {
   const [averageBoxProportion, setAverageBoxProportion] = useState<number | null>(null);
   const [distribution, setDistribution] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function BoxProportionMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 boxProportions
               }
             }
@@ -41,12 +45,19 @@ export default function BoxProportionMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const rawData = result.data?.imageMetrics || [];
+        // Add null check for result.data and imageMetrics
+        if (!result.data?.imageMetrics) {
+          throw new Error("No data received from the server");
+        }
 
-        // Flatten the proportions (as one image may have multiple values)
-        const allProportions: number[] = rawData.flatMap((item: { boxProportions: number[] }) =>
-          item.boxProportions
-        );
+        const rawData = result.data.imageMetrics;
+
+        // Flatten the proportions with proper type checking
+        const allProportions: number[] = rawData
+          .filter((item: any) => item?.boxProportions && Array.isArray(item.boxProportions))
+          .flatMap((item: any) => 
+            item.boxProportions.filter((prop: any) => typeof prop === 'number' && !isNaN(prop))
+          );
 
         if (allProportions.length === 0) {
           throw new Error("No box proportion data available");
@@ -54,17 +65,25 @@ export default function BoxProportionMetrics() {
 
         // Define fixed number of bins (10)
         const maxProportion = Math.max(...allProportions);
-        const binSize = maxProportion / 10;
+        const minProportion = Math.min(...allProportions);
 
+        // Ensure we have valid min and max proportions
+        if (isNaN(minProportion) || isNaN(maxProportion)) {
+          throw new Error("Invalid proportion data");
+        }
+
+        const binSize = (maxProportion - minProportion) / 10;
         const bins: BoxData[] = Array.from({ length: 10 }, (_, i) => ({
-          range: `${((i * binSize) * 100).toFixed(1)}% - ${(((i + 1) * binSize) * 100).toFixed(1)}%`,
+          range: `${((minProportion + i * binSize) * 100).toFixed(1)}% - ${((minProportion + (i + 1) * binSize) * 100).toFixed(1)}%`,
           count: 0,
         }));
 
         // Count occurrences in each bin
         allProportions.forEach((proportion) => {
-          const index = Math.min(Math.floor(proportion / binSize), 9);
-          bins[index].count++;
+          const index = Math.min(Math.floor((proportion - minProportion) / binSize), 9);
+          if (index >= 0) {
+            bins[index].count++;
+          }
         });
 
         // Compute average box proportion
@@ -74,16 +93,18 @@ export default function BoxProportionMetrics() {
         setAverageBoxProportion(avgProportion);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setDistribution([]); // Reset distribution on error
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+  if (distribution.length === 0) return <p>No data available</p>;
 
   return (
     <Card>

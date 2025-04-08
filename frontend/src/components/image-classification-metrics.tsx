@@ -16,10 +16,16 @@ import PreTimeMetrics from "./pre-time-metrics";
 import PostTimeMetrics from "./post-time-metrics";
 import Overview from "./Overview";
 import ClassPrecision from "./class-precision";
+import BatchSelector from "./batch-selector";
 
 interface OverviewCardProps {
   title: string;
   children: React.ReactNode;
+}
+
+interface ImageClassificationMetricsProps {
+  selectedBatch: string | null;
+  onBatchChange: (batchId: string | null) => void;
 }
 
 function OverviewCard({ title, children }: OverviewCardProps) {
@@ -38,13 +44,18 @@ function OverviewCard({ title, children }: OverviewCardProps) {
   );
 }
 
-export default function ImageClassificationMetrics() {
+export default function ImageClassificationMetrics({ selectedBatch, onBatchChange }: ImageClassificationMetricsProps) {
+  const [activeTab, setActiveTab] = useState<'internal' | 'feedback'>('internal');
+
   return (
-    <Tabs defaultValue="internal" className="space-y-4 p-5">
-      <TabsList>
-        <TabsTrigger value="internal">Internal Metrics</TabsTrigger>
-        <TabsTrigger value="feedback">Feedback-based Metrics</TabsTrigger>
-      </TabsList>
+    <Tabs defaultValue="internal" className="space-y-4 p-5" onValueChange={(value) => setActiveTab(value as 'internal' | 'feedback')}>
+      <div className="flex justify-between items-center">
+        <TabsList>
+          <TabsTrigger value="internal">Internal Metrics</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback-based Metrics</TabsTrigger>
+        </TabsList>
+        <BatchSelector onBatchChange={onBatchChange} activeTab={activeTab} />
+      </div>
 
       <TabsContent value="internal" className="space-y-4">
         <Tabs defaultValue="overview" className="space-y-4">
@@ -57,39 +68,33 @@ export default function ImageClassificationMetrics() {
 
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Overview />
+              <Overview selectedBatch={selectedBatch} />
             </div>
           </TabsContent>
 
           <TabsContent value="confidence" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <ConfidenceMetrics />
-              <ClassDistribution />
-              <ClassConfidence />
+              <ConfidenceMetrics selectedBatch={selectedBatch} />
+              <ClassDistribution selectedBatch={selectedBatch} />
+              <ClassConfidence selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
 
           <TabsContent value="bounding" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <BoundingBoxMetrics />
-              <BoxProportionMetrics />
-              <DetectionMetrics />
+              <BoundingBoxMetrics selectedBatch={selectedBatch} />
+              <BoxProportionMetrics selectedBatch={selectedBatch} />
+              <DetectionMetrics selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
 
           <TabsContent value="time" className="space-y-4">
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-              <InferenceTimeMetrics />
-              <PreTimeMetrics />
-              <PostTimeMetrics />
-              <InferenceTimeBar />
+              <InferenceTimeMetrics selectedBatch={selectedBatch} />
+              <PreTimeMetrics selectedBatch={selectedBatch} />
+              <PostTimeMetrics selectedBatch={selectedBatch} />
+              <InferenceTimeBar selectedBatch={selectedBatch} />
             </div>
-
           </TabsContent>
         </Tabs>
       </TabsContent>
@@ -102,12 +107,12 @@ export default function ImageClassificationMetrics() {
           </TabsList>
           <TabsContent value="accuracy-overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <AccuracyMetrics />
+              <AccuracyMetrics selectedBatch={selectedBatch} />
             </div>
           </TabsContent>
           <TabsContent value="precision" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
-              <ClassPrecision />
+              <ClassPrecision selectedBatch={selectedBatch} />
             </div>
           </TabsContent>
         </Tabs>

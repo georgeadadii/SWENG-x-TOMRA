@@ -17,27 +17,33 @@ interface AggregatedData {
   };
 }
 
-export default function AccuracyMetrics() {
+interface AccuracyMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function AccuracyMetrics({ selectedBatch }: AccuracyMetricsProps) {
   const [metrics, setMetrics] = useState([
     { name: "Accuracy", value: 0 },
     { name: "Average Precision", value: 0 },
-    { name: "Recall", value: 0 },
-    { name: "F1 Score", value: 0 },
   ]);
   const [averagePrecision, setAveragePrecision] = useState<number | null>(null); // To store average precision
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasData, setHasData] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         const response = await fetch(GRAPHQL_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query: `
             query {
-              results {
+              results${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 classLabel
                 classified
                 reviewed
@@ -56,10 +62,19 @@ export default function AccuracyMetrics() {
           throw new Error(result.errors[0]?.message || "GraphQL query error");
         }
 
-        const rawData: RawDataItem[] = result.data.results;
-        if (!rawData || rawData.length === 0) {
-          throw new Error("No data available");
+        // Check if we have valid data
+        if (!result.data?.results || result.data.results.length === 0) {
+          setHasData(false);
+          setMetrics([
+            { name: "Accuracy", value: 0 },
+            { name: "Average Precision", value: 0 },
+          ]);
+          setAveragePrecision(0);
+          return;
         }
+
+        const rawData: RawDataItem[] = result.data.results;
+        setHasData(true);
 
         // Calculate accuracy 
         const classifiedCount = rawData.filter((img) => img.classified).length;
@@ -96,21 +111,21 @@ export default function AccuracyMetrics() {
         setMetrics([
           { name: "Accuracy", value: accuracy },
           { name: "Average Precision", value: avgPrecision },
-          { name: "Recall", value: 0.88 },  // Example value for recall
-          { name: "F1 Score", value: 0.85 },  // Example value for F1 score
         ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setHasData(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
+  if (!hasData) return <p>No data available for {selectedBatch ? `batch ${selectedBatch}` : 'the selected criteria'}</p>;
 
   return (
     <Card className="col-span-3">

@@ -9,7 +9,11 @@ type DetectionData = {
   count: number;
 };
 
-export default function DetectionMetrics() {
+interface DetectionMetricsProps {
+  selectedBatch: string | null;
+}
+
+export default function DetectionMetrics({ selectedBatch }: DetectionMetricsProps) {
   const [averageDetections, setAverageDetections] = useState<number | null>(null);
   const [detectionDistribution, setDetectionDistribution] = useState<DetectionData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function DetectionMetrics() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 labels
               }
             }
@@ -80,7 +84,7 @@ export default function DetectionMetrics() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
@@ -97,7 +101,7 @@ export default function DetectionMetrics() {
             <p className="text-sm font-medium">Average Detections per Image</p>
             <p className="text-2xl font-bold">{averageDetections?.toFixed(1)}</p>
           </div>
-          <div className="h-[200px]">
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={detectionDistribution}>
                 <CartesianGrid strokeDasharray="3 3" />

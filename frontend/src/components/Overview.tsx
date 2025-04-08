@@ -14,7 +14,11 @@ type MetricsData = {
   averagePostprocessTime: number;
 };
 
-export default function Overview() {
+interface OverviewProps {
+  selectedBatch: string | null;
+}
+
+export default function Overview({ selectedBatch }: OverviewProps) {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +32,7 @@ export default function Overview() {
           body: JSON.stringify({
             query: `
             query {
-              imageMetrics {
+              imageMetrics${selectedBatch ? `(batchId: "${selectedBatch}")` : ''} {
                 confidences
                 preprocessingTime
                 inferenceTime
@@ -82,7 +86,7 @@ export default function Overview() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedBatch]);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>Error: {error}</p>;

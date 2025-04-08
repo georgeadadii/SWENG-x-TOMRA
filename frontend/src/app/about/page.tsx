@@ -89,7 +89,7 @@ export default function About() {
             transition={{ duration: 1, delay: 0.8 }}
           >
             <p className="text-lg md:text-xl text-white opacity-90 leading-relaxed">
-              We are a team of passionate developers and AI enthusiasts dedicated to making image classification accessible and efficient for everyone.
+              We are group 6, a team of passionate developers and AI enthusiasts dedicated to making image classification accessible and efficient for everyone.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
@@ -101,7 +101,7 @@ export default function About() {
               >
                 <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
                 <p className="text-white/80">
-                  To revolutionize image classification by providing intuitive tools that make AI-powered image recognition accessible to developers, researchers, and businesses of all sizes.
+                  Developed in collaboration with TOMRA Sorting Ltd, this project focuses on leveraging pre-trained models to classify images and improve model accuracy through user feedback.
                 </p>
               </motion.div>
 
@@ -113,7 +113,7 @@ export default function About() {
               >
                 <h2 className="text-2xl font-bold text-white mb-4">Our Vision</h2>
                 <p className="text-white/80">
-                  To become the leading platform for image classification, setting new standards for accuracy, efficiency, and user experience in the field of computer vision.
+                  The system is designed to be near real-time, and deployed across both edge and cloud environments, ensuring scalability and flexibility.
                 </p>
               </motion.div>
             </div>
@@ -125,7 +125,7 @@ export default function About() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.4 }}
             >
-              <h2 className="text-3xl font-bold text-white mb-8 text-center">Key Features</h2>
+              <h2 className="text-3xl font-bold text-white mb-8 mt-20 text-center">Key Features</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {features.map((feature, index) => (
                   <motion.div
@@ -155,7 +155,7 @@ export default function About() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.8 }}
             >
-              <h2 className="text-4xl font-bold text-white mb-12 text-center">Meet the Team</h2>
+              <h2 className="text-4xl font-bold text-white mb-12 mt-20 text-center">Meet the Team</h2>
 
               {/* Team Leads */}
               <motion.div

@@ -19,6 +19,10 @@ from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
 from pathlib import Path
 from dotenv import load_dotenv
+import kaggle
+import zipfile
+import shutil
+from pathlib import Path
 
 env_path = Path("..") / ".env"  
 load_dotenv(dotenv_path=env_path)
@@ -40,6 +44,45 @@ secret = secret_client.get_secret("AZURE-CONNECTION-STRING")
 AZURE_CONNECTION_STRING = secret.value
 secret = secret_client.get_secret("CONTAINER-NAME")
 CONTAINER_NAME = secret.value
+
+def download_and_process_kaggle_dataset(dataset_name="alessiocorrado99/animals10", target_folder="kaggle_images"):
+    """
+    Download and extract a Kaggle dataset to a target folder.
+    Returns the path to the extracted images.
+    """
+    # Create target folder if it doesn't exist
+    os.makedirs(target_folder, exist_ok=True)
+    
+    try:
+        print(f"Downloading Kaggle dataset: {dataset_name}")
+        kaggle.api.dataset_download_files(dataset_name, path=target_folder, unzip=False)
+        
+        zip_file = next(Path(target_folder).glob("*.zip"))
+        
+        print(f"Extracting dataset: {zip_file}")
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(target_folder)
+        
+        raw_data_folder = os.path.join(target_folder, "raw-img")
+        if os.path.exists(raw_data_folder):
+            for root, _, files in os.walk(raw_data_folder):
+                for file in files:
+                    if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff')):
+                        src = os.path.join(root, file)
+                        dst = os.path.join(target_folder, file)
+                        if os.path.exists(dst):
+                            base, ext = os.path.splitext(file)
+                            dst = os.path.join(target_folder, f"{base}_{hashlib.md5(root.encode()).hexdigest()[:8]}{ext}")
+                        shutil.move(src, dst)
+            
+            shutil.rmtree(raw_data_folder)
+        
+        print(f"Dataset prepared in: {target_folder}")
+        return target_folder
+    
+    except Exception as e:
+        print(f"Error processing Kaggle dataset: {e}")
+        raise
 
 def compute_file_hash(file_path, hash_algorithm="sha256"):
     """Compute the hash of a file using the specified algorithm."""
@@ -169,18 +212,29 @@ def send_metrics_to_server(metrics, batch_id):
         response = stub.StoreMetrics(request)
         print(f"Server response: {response.message}")
 
-def run(model_name, quantize=False):
+def run(model_name, quantize=False, use_kaggle_dataset=False, max_images=25):
     try:
         model = ModelFactory.create_model(model_name, quantize)
 
-        # Path to the folder containing unprocessed images
-        unprocessed_folder_path = "unprocessed_images"
-        image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
-        image_files = [f for f in os.listdir(unprocessed_folder_path) if f.lower().endswith(image_extensions)]
+        if use_kaggle_dataset:
+            # Process Kaggle dataset
+            image_folder = download_and_process_kaggle_dataset()
+            image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
+            image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(image_extensions)]
+        else:
+            # Process unprocessed_images folder as before
+            unprocessed_folder_path = "unprocessed_images"
+            image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
+            image_files = [f for f in os.listdir(unprocessed_folder_path) if f.lower().endswith(image_extensions)]
+            image_folder = unprocessed_folder_path
 
         if not image_files:
             print("No images found in the unprocessed_images folder.")
             return
+
+        if max_images is not None:
+            image_files = image_files[:max_images]
+            print(f"Limiting processing to {max_images} images")
 
         batch_id = str(uuid.uuid4())
         data = {
@@ -202,7 +256,7 @@ def run(model_name, quantize=False):
 
         # Process each image and accumulate results for streaming
         for image_name in image_files:
-            image_path = os.path.join(unprocessed_folder_path, image_name)
+            image_path = os.path.join(image_folder, image_name)
             print(f"Processing image: {image_name}")
 
             image_url = upload_to_azure(image_path)
@@ -225,6 +279,8 @@ def run(model_name, quantize=False):
             data['heights'].append(height)    # Add image height
             data['formats'].append(format)
 
+            if use_kaggle_dataset:
+                os.remove(image_path)
 
         # After all images are processed, send the results to the server in a stream
         send_results_to_server(
@@ -242,6 +298,10 @@ def run(model_name, quantize=False):
             data['heights'],     # Pass image heights
             data['formats']      # Pass image formats
         )
+
+        if use_kaggle_dataset:
+            shutil.rmtree("kaggle_images")
+            print("Cleaned up Kaggle download folder")
 
         print("pre_times:",data['pre_times'])
 
@@ -283,6 +343,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the model client.")
     parser.add_argument("--model", type=str, choices=["yolo", "efficientnet"], default="yolo", help="Select the model to use.")
     parser.add_argument("--quantize", action="store_true", help="Quantize the model for lower energy consumption.")
+    parser.add_argument("--kaggle", action="store_true", help="Process images from Kaggle dataset instead of unprocessed_images folder.")
+    parser.add_argument("--max-images", type=int, default=25, help="Maximum number of images to process from the dataset.")
     args = parser.parse_args()
 
-    run(args.model, args.quantize)
+    # Configure Kaggle API
+    if args.kaggle:
+        # Make sure kaggle.json is in the right location (~/.kaggle/kaggle.json)
+        from kaggle.api.kaggle_api_extended import KaggleApi
+        api = KaggleApi()
+        api.authenticate()
+
+    run(args.model, args.quantize, args.kaggle, args.max_images)

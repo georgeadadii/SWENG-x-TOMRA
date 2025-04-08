@@ -40,6 +40,10 @@ export default function About() {
     },
   ];
 
+  const mentors = [
+    { name: "Amrish Kulasekaran", role: "Industrial Mentor", year: "", image: "/Amrish.png" }
+  ]
+
   const teamLeads = [
     { name: "Radi (Leila) Adil", role: "Team Lead", year: "3rd Year", image: "/Radi (Leila) Adil.png" },
     { name: "Cindy Ariyo", role: "Team Lead", year: "3rd Year", image: "/Cindy Ariyo.png" },
@@ -156,7 +160,43 @@ export default function About() {
               transition={{ duration: 0.8, delay: 1.8 }}
             >
               <h2 className="text-4xl font-bold text-white mb-12 mt-20 text-center">Meet the Team</h2>
-
+              {/* Mentors */}
+              <motion.div
+                className="mb-16"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 2.0 }}
+              >
+                <h3 className="text-2xl font-bold text-white mb-8 text-center">Industrial Mentor</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-8">
+                  {mentors.map((member, index) => (
+                    <motion.div
+                      key={index}
+                      className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 2.2 + (index * 0.1) }}
+                      whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(139, 92, 246, 0.3)" }}
+                    >
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-purple-900/30 flex items-center justify-center overflow-hidden">
+                        {member.image ? (
+                          <Image 
+                            src={member.image} 
+                            alt={member.name} 
+                            width={128} 
+                            height={128} 
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-white/50 text-sm">Photo</span>
+                        )}
+                      </div>
+                      <h4 className="text-xl font-bold text-white text-center">{member.name}</h4>
+                      <p className="text-purple-300 text-center">{member.role}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
               {/* Team Leads */}
               <motion.div
                 className="mb-16"

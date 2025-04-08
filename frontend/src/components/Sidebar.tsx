@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { FaImages, FaRegHandPointer, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { FaImages, FaRegHandPointer, FaSignOutAlt, FaCog, FaTags } from "react-icons/fa";
 import { CgPerformance } from "react-icons/cg";
 import Link from "next/link";
 import { Roboto } from "next/font/google";
@@ -67,6 +67,19 @@ const Sidebar: React.FC = () => {
                     <FaRegHandPointer className="text-purple-300" /> 
                     <span>SwipeToConfirm</span>
                 </Link>
+
+                <Link
+                    href="/dashboard/labels"
+                    className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-300 ${
+                        pathname === "/dashboard/labels" 
+                            ? "bg-gradient-to-r from-purple-700 to-blue-900 shadow-[0_0_15px_rgba(139,92,246,0.3)] border border-purple-500/30" 
+                            : "hover:bg-purple-900/20 hover:border hover:border-purple-500/20 hover:shadow-[0_0_10px_rgba(139,92,246,0.15)]"
+                    }`}
+                >
+                    <FaTags className="text-purple-300" /> 
+                    <span>Labels</span>
+                </Link>
+
             </nav>
             
             <div className="mt-auto relative z-10">

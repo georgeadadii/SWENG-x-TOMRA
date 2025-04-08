@@ -10,6 +10,9 @@ sys.modules["ultralytics"] = MagicMock()
 sys.modules["torch.quantization"] = MagicMock()
 sys.modules["efficientnet_pytorch"] = MagicMock()
 sys.modules["PIL"] = MagicMock()
+sys.modules["kaggle"] = MagicMock()
+sys.modules["kaggle.api"] = MagicMock()
+sys.modules["kaggle.api.kaggle_api_extended"] = MagicMock()
 
 from model_client import upload_to_azure, process_image, send_results_to_server, compute_file_hash
 

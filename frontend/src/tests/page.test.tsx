@@ -4,7 +4,7 @@ import Home from "@/app/page";
 import About from "@/app/about/page";
 import { useRouter } from "next/navigation";
 
-// Mock IntersectionObserver before importing components
+
 class MockIntersectionObserver {
   readonly root: Element | null;
   readonly rootMargin: string;
@@ -21,10 +21,9 @@ class MockIntersectionObserver {
   disconnect = jest.fn();
 }
 
-// Assign the mock to global
+
 global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
 
-// Continue with your mocks
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));

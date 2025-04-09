@@ -33,7 +33,7 @@ jest.mock("@/components/ui/tabs", () => {
   };
 });
 
-// Mock BatchView component
+
 jest.mock("@/components/BatchView", () => {
   return function MockedBatchView({ images }) {
     return (
@@ -121,9 +121,9 @@ describe("ImageGrid Component", () => {
     expect(screen.getByText(/Loading images.../i)).toBeInTheDocument();
   });
 
-  // Completely simplified test approach that doesn't rely on mocking the API responses
+  
   it("renders error state", () => {
-    // Create a mock component that just renders the error state
+   
     const ErrorStateTest = () => (
       <div data-testid="content-grid">
         <div className="w-full h-64 flex items-center justify-center">
@@ -137,13 +137,13 @@ describe("ImageGrid Component", () => {
     
     render(<ErrorStateTest />);
     
-    // Now test for these elements
+    
     expect(screen.getByText("Error Loading Images")).toBeInTheDocument();
     expect(screen.getByText("Failed to fetch images")).toBeInTheDocument();
   });
 
   it("renders image grid view with images", () => {
-    // Create a mock component that just renders the grid state
+   
     const GridStateTest = () => (
       <div data-testid="content-grid">
         <div className="w-full grid grid-cols-2 gap-4">
@@ -161,7 +161,7 @@ describe("ImageGrid Component", () => {
   });
 
   it("can provide feedback on an image", () => {
-    // Create a mock component that just renders a grid with a cat image
+    
     const FeedbackTestMock = () => (
       <div data-testid="content-grid">
         <div className="grid grid-cols-1">
@@ -172,7 +172,7 @@ describe("ImageGrid Component", () => {
     
     render(<FeedbackTestMock />);
     
-    // Check that the Cat image is in the document
+    
     expect(screen.getByTestId("cat-image")).toHaveTextContent("Cat");
   });
 });

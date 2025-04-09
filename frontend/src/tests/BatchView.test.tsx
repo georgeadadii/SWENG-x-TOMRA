@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BatchView from '../components/BatchView';
 import '@testing-library/jest-dom';
 
-// Mock the framer-motion to avoid animation issues in tests
+
 jest.mock('framer-motion', () => {
     const actual = jest.requireActual('framer-motion');
     return {
@@ -16,7 +16,7 @@ jest.mock('framer-motion', () => {
 });
 
 describe("BatchView Component", () => {
-    // Sample image data for testing
+    
     const mockImages = [
         {
             imageUrl: "https://example.com/image1.jpg",
@@ -88,7 +88,7 @@ describe("BatchView Component", () => {
             />
         );
 
-        // Should have batch1 and batch2 as separate batches
+       
         expect(screen.getByText(/Batch batch1/i)).toBeInTheDocument();
         expect(screen.getByText(/Batch batch2/i)).toBeInTheDocument();
 
@@ -113,10 +113,10 @@ describe("BatchView Component", () => {
             />
         );
 
-        // Find all statistic indicators
+       
         const statElements = screen.getAllByText(/1/i);
 
-        // We should have correct stats for both batches
+       // correct stats for both batches
         expect(statElements.length).toBeGreaterThan(0);
     });
 
@@ -132,7 +132,7 @@ describe("BatchView Component", () => {
             />
         );
 
-        // Find and click on the first batch card
+        
         const batchCard = screen.getByText(/Batch batch1/i).closest(".batch-card");
         if (batchCard) {
             fireEvent.click(batchCard.querySelector(".relative.flex-1") || batchCard);
@@ -163,18 +163,18 @@ describe("BatchView Component", () => {
             />
         );
 
-        // First select a batch
+        // select a batch
         const batchCard = screen.getByText(/Batch batch1/i).closest(".batch-card");
         if (batchCard) {
             fireEvent.click(batchCard.querySelector(".relative.flex-1") || batchCard);
         }
 
-        // Verify we're in batch view
+        // Verify in batch view
         await waitFor(() => {
             expect(screen.getByText(/Back to all batches/i)).toBeInTheDocument();
         });
 
-        // Click the back button
+       
         const backButton = screen.getByText(/Back to all batches/i);
         fireEvent.click(backButton);
 
@@ -198,13 +198,13 @@ describe("BatchView Component", () => {
             />
         );
 
-        // First select a batch
+        // select a batch
         const batchCard = screen.getByText(/Batch batch1/i).closest(".batch-card");
         if (batchCard) {
             fireEvent.click(batchCard.querySelector(".relative.flex-1") || batchCard);
         }
 
-        // Verify we're in batch view
+        // Verify in batch view
         await waitFor(() => {
             expect(screen.getByText(/Back to all batches/i)).toBeInTheDocument();
         });
@@ -232,7 +232,7 @@ describe("BatchView Component", () => {
             fireEvent.click(batchCard.querySelector(".relative.flex-1") || batchCard);
         }
 
-        // Verify we're in batch view
+        // Verify in batch view
         await waitFor(() => {
             expect(screen.getByText(/Back to all batches/i)).toBeInTheDocument();
         });
@@ -259,18 +259,18 @@ describe("BatchView Component", () => {
             />
         );
 
-        // First select a batch
+        // select a batch
         const batchCard = screen.getByText(/Batch batch1/i).closest(".batch-card");
         if (batchCard) {
             fireEvent.click(batchCard.querySelector(".relative.flex-1") || batchCard);
         }
 
-        // Verify we're in batch view
+        // Verify in batch view
         await waitFor(() => {
             expect(screen.getByText(/Back to all batches/i)).toBeInTheDocument();
         });
 
-        // Find an image and hover over it
+      
         const imageElement = screen.getByText("Cat").closest(".relative");
         if (imageElement) {
             fireEvent.mouseEnter(imageElement);
@@ -279,12 +279,12 @@ describe("BatchView Component", () => {
         // Verify setHoveredIndex was called with the correct index
         expect(mockSetHoveredIndex).toHaveBeenCalledWith(0);
 
-        // Now mouse leave
+      
         if (imageElement) {
             fireEvent.mouseLeave(imageElement);
         }
 
-        // Verify setHoveredIndex was called with null
+        
         expect(mockSetHoveredIndex).toHaveBeenCalledWith(null);
     });
 });

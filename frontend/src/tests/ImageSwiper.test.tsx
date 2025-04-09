@@ -51,26 +51,6 @@ describe('ImageSwiper Component', () => {
     expect(screen.getByText('Confidence: 95.00%')).toBeInTheDocument();
   });
 
-  /*test('handles swipe to the right', async () => {
-    render(
-      <ApolloProvider client={mockClient}>
-        <ImageSwiper />
-      </ApolloProvider>
-    );
-
-    const rightButton = screen.getByLabelText(/chevron-right/i);
-    fireEvent.click(rightButton);
-
-    await waitFor(() => {
-      const secondImage = screen.getByRole('img', { name: /dog/i });
-      expect(secondImage).toBeInTheDocument();
-      expect(secondImage).toHaveAttribute('src', 'https://example.com/image2.jpg');
-    });
-
-    expect(screen.getByText('Dog')).toBeInTheDocument();
-    expect(screen.getByText('Confidence: 89.00%')).toBeInTheDocument();
-  });*/
-
   test('displays loading state', () => {
     mockUseQuery.mockReturnValue({ data: null, loading: true, error: null });
 
